@@ -9,18 +9,24 @@
  * Implements hook_preprocess_html().
  */
 function apigee_responsive_preprocess_html(&$vars) {
-  $header_bg_color         = theme_get_setting('header_bg_color');
-  $header_txt_color        = theme_get_setting('header_txt_color');
-  $header_hover_bg_color   = theme_get_setting('header_hover_bg_color');
-  $header_hover_txt_color  = theme_get_setting('header_hover_txt_color');
-  $link_color              = theme_get_setting('link_color');
-  $link_hover_color        = theme_get_setting('link_hover_color');
-  $footer_bg_color         = theme_get_setting('footer_bg_color');
-  $footer_link_color       = theme_get_setting('footer_link_color');
-  $footer_link_hover_color = theme_get_setting('footer_link_hover_color');
-  $button_background_color = theme_get_setting('button_background_color');
-  $button_text_color       = theme_get_setting('button_text_color');
+  $header_bg_color                = theme_get_setting('header_bg_color');
+  $header_txt_color               = theme_get_setting('header_txt_color');
+  $header_hover_bg_color          = theme_get_setting('header_hover_bg_color');
+  $header_hover_txt_color         = theme_get_setting('header_hover_txt_color');
+  $link_color                     = theme_get_setting('link_color');
+  $link_hover_color               = theme_get_setting('link_hover_color');
+  $footer_bg_color                = theme_get_setting('footer_bg_color');
+  $footer_link_color              = theme_get_setting('footer_link_color');
+  $footer_link_hover_color        = theme_get_setting('footer_link_hover_color');
+  $button_background_color        = theme_get_setting('button_background_color');
+  $button_text_color              = theme_get_setting('button_text_color');
+  $button_hover_background_color  = theme_get_setting('button_hover_background_color');
+  $button_hover_text_color        = theme_get_setting('button_hover_text_color');
 
+  //add additional class to the body to adjust the body padding according to the logo size.
+  //this is to prevent the search box from going beneath the header.
+  $vars['classes_array'][] = "logo_" . theme_get_setting('logo_size');
+ 
   $cdn = theme_get_setting('bootstrap_cdn');
 
   if (!(bool)$cdn || !isset($cdn) || empty($cdn)) {
@@ -37,13 +43,11 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body header.navbar {background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar {border-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-toggle {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .navbar-inverse .navbar-collapse {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .navbar-inverse .navbar-collapse:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-collapse:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-toggle:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-nav > .open > a {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_hover_bg_color; color:$header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-inverse .navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-default .navbar-toggle:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body .navbar-default .navbar-toggle:active {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -58,7 +62,7 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body header.navbar.navbar-nav > .open > a:hover {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar.navbar-nav > .open > a:focus {border-color: $header_bg_color; background-color: $header_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body header.navbar .nav > li > a {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body header.navbar .nav > li > a:hover, body ul.menu li.active-trail a {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body header.navbar .nav > li > a:hover {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css(".navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form, .navbar-inverse .navbar-toggle,
   .navbar-default .navbar-collapse, .navbar-default .navbar-form, .navbar-default .navbar-toggle, header.navbar.navbar-collapse,
   header.navbar.navbar-form, header.navbar.navbar-toggle {border-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
@@ -71,9 +75,29 @@ function apigee_responsive_preprocess_html(&$vars) {
   drupal_add_css("body header.navbar .nav > li > a:hover {color: $header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body a {color: $link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
   drupal_add_css("body a:hover {color: $link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner {background-color: $footer_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a {color: $footer_link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
-  drupal_add_css("body .footer .footer-inner .navbar ul.footer-links > li > a:hover {color: $footer_link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer {background-color: $footer_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer .navbar ul.footer-links > li > a {color: $footer_link_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .footer .navbar ul.footer-links > li > a:hover {color: $footer_link_hover_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn {background-color: $button_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn {color: $button_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:hover {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:hover {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:focus {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:focus {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:active {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn:active {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn.active {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .btn.active {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .open .dropdown-toggle.btn {background-color: $button_hover_background_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css("body .open .dropdown-toggle.btn {color: $button_hover_text_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+
+  // Main menu expanded drop down colors.
+  drupal_add_css(".navbar-nav > li > span {color: $header_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li > span:hover {color: $header_hover_txt_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li.expanded span:hover {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li.expanded.active {background-color: $header_hover_bg_color}", array('group' => CSS_THEME, 'type' => 'inline'));
+  drupal_add_css(".navbar-nav > li > span > span.caret {border-bottom-color: $header_txt_color; border-top-color: $header_txt_color; color: $header_txt_color;}", array('group' => CSS_THEME, 'type' => 'inline'));
+
 
   switch (theme_get_setting('logo_size')) {
     case 'big':
@@ -227,7 +251,7 @@ function apigee_responsive_preprocess_block(&$vars) {
  * Implements hook_preprocess_hook().
  */
 function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
-  global $user;
+  $user = (isset($vars['user']) ? $vars['user'] : $GLOBALS['user']);
   // Set Title.
   if ($user->uid == $GLOBALS['user']->uid) {
     if ((bool)variable_get('myapis')) {
@@ -252,23 +276,28 @@ function apigee_responsive_preprocess_devconnect_developer_apps_list(&$vars) {
   drupal_set_breadcrumb($breadcrumb);
 
   $vars['show_status'] = variable_get('devconnect_show_apiproduct_status', FALSE);
-  if ((bool)variable_get('myapis')) {
-    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
+  
+  if (user_access("create developer apps")) {
+    if ((bool) variable_get('myapis')) {
+      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new API'), 'user/' . $user->uid . '/apps/add', array(
         'html' => TRUE,
         'attributes' => array('class' => array(
-          'add-app')
+            'add-app')
         )
-      )
-    );
-  } else {
-    $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
+          )
+      );
+    }
+    else {
+      $vars['add_app'] = l(t('<span class="glyphicon glyphicon-plus"></span> Add a new app'), 'user/' . $user->uid . '/apps/add', array(
         'html' => TRUE,
         'attributes' => array('class' => array(
-          'add-app')
+            'add-app')
         )
-      )
-    );
+          )
+      );
+    }
   }
+  
 
   $vars['i'] = 0;
 

@@ -425,8 +425,12 @@ function _devconnect_developer_apps_analytics_get_datapoints($user, $app_name) {
 
 }
 
-function devconnect_developer_analytics_performance_download($user, $app_name, $format) {
-
+function devconnect_developer_analytics_performance_download($user, $appId, $format) {
+  
+  $entities = entity_load('developer_app', array($appId), array('mail' => $user->mail));
+  $entity = reset($entities);
+  $app_name = $entity->name;
+  
   $my_data = _devconnect_developer_apps_analytics_get_datapoints($user, $app_name);
   $datapoints = $my_data['datapoints'];
   $default_datapoints = $my_data['default_datapoints'];

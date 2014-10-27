@@ -82,6 +82,7 @@ function devconnect_developer_apps_menu() {
     'page arguments' => array('devconnect_developer_apps_config'),
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'devconnect_developer_apps.admin.inc'
   );
 
   return $items;
@@ -284,246 +285,6 @@ function _devconnect_developer_apps_get_default_value($name, $default, $form_sta
   return variable_get($name, $default);
 }
 
-function devconnect_developer_apps_config($form, &$form_state) {
-
-  $form['apiproduct'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('API Product settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE
-  );
-
-  $handling = _devconnect_developer_apps_get_default_value('devconnect_api_product_handling', 'multiple_required', $form_state);
-  $form['apiproduct']['devconnect_api_product_handling'] = array(
-    '#type' => 'radios',
-    '#title' => t('API Product handling'),
-    '#default_value' => $handling,
-    '#options' => array(
-      'no_api_product' => t('Do not associate apps with any API Product.'),
-      'default_api_product' => t('Associate all apps with one or more Default API Products (configured below).'),
-      'single_unrequired' => t('Allow selection of a single API Product, but do not require it.'),
-      'single_required' => t('Require selection of a single API Product.'),
-      'multiple_unrequired' => t('Allow selection of multiple API Products, but do not require any.'),
-      'multiple_required' => t('Allow selection of multiple API Products, and require at least one.')
-    ),
-    '#required' => TRUE,
-    '#ajax' => array(
-      'callback' => '_devconnect_developer_apps_render_apiproducts',
-      'wrapper' => 'devconnect-default-api-product-wrapper',
-      'method' => 'replace',
-      'effect' => 'fade',
-    )
-  );
-
-  $form['apiproduct']['devconnect_developer_apps_apiproduct_widget'] = array(
-    '#type' => 'radios',
-    '#title' => t('API Product widget'),
-    '#description' => t('The form element type to use when selecting an API Product on the app create/edit page.'),
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_developer_apps_apiproduct_widget', 'select', $form_state),
-    '#options' => array(
-      'select' => t('Dropdown select box'),
-      'checkboxes' => t('Checkboxes/radio buttons')
-    ),
-    '#required' => TRUE
-  );
-
-  $required = (strpos($handling, 'default') === 0);
-  $product_required = ($required || strpos($handling, 'required') !== FALSE);
-  // Show check boxes if default_api_product option is chosen
-  if ($handling == 'default_api_product') {
-    $multiple = TRUE;
-  }
-  else {
-    $multiple = (strpos($handling, 'multiple') !== FALSE);
-  }
-
-  $api_products = devconnect_developer_apps_get_api_products();
-  $options = array();
-  foreach ($api_products as $product) {
-    $options[$product->name] = $product->displayName;
-  }
-  $default_api_product = _devconnect_developer_apps_get_default_value('devconnect_default_api_product', NULL, $form_state);
-  if (is_array($default_api_product) && !empty($default_api_product)) {
-    $keys = array_keys($default_api_product);
-    if (!is_numeric($keys[0])) {
-      $dap = array();
-      foreach ($keys as $name) {
-        if ($default_api_product[$name]) {
-          $dap[] = $name;
-        }
-      }
-      $default_api_product = $dap;
-    }
-  }
-  if ($multiple) {
-    if (empty($default_api_product)) {
-      $default_api_product = array();
-    }
-    elseif (!is_array($default_api_product)) {
-      $default_api_product = array($default_api_product);
-    }
-  }
-  else {
-    if (empty($default_api_product)) {
-      $default_api_product = NULL;
-    }
-    elseif (is_array($default_api_product)) {
-      $default_api_product = reset($default_api_product);
-    }
-  }
-
-  asort($options);
-  if (!$multiple && !$required) {
-    $options = array('' => '- None -') + $options;
-  }
-
-  $form['apiproduct']['devconnect_default_api_product'] = array(
-    '#prefix' => '<div id="devconnect-default-api-product-wrapper">',
-    '#suffix' => '</div>',
-    '#type' => ($multiple ? 'checkboxes' : 'radios'),
-    '#title' => t('Default API Product'),
-    '#options' => $options,
-    '#default_value' => $default_api_product
-  );
-
-  $form['ui_settings'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Application UI Settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-
-  $form['ui_settings']['myapis'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use My APIs <em>instead of My Apps</em>'),
-    '#default_value' => variable_get('myapis'),
-  );
-
-  $form['callback'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Callback URL settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-
-  $callback_external = 'Callback URLs should be required for all production-grade apps using a ' .
-    '3-legged authentication scheme (see http://tetraph.com/covert_redirect/oauth2_openid_covert_redirect.html)';
-
-  $form['callback']['devconnect_callback_handling'] = array(
-    '#type' => 'radios',
-    '#title' => t('Callback URL handling'),
-    '#description' => t($callback_external),
-    '#options' => array(
-      'require' => t('Callback URL is required for all developer apps. %o', array('%o' => '(best practice)')),
-      'optional' => t('Callback URL is optional for all developer apps.'),
-      'none' => t('Callback URL is neither required nor displayed.')
-    ),
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_callback_handling', 'require', $form_state),
-    '#required' => TRUE
-  );
-
-  $form['callback']['devconnect_validate_callback_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Regex to Validate App Callback URL'),
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_validate_callback_url', '', $form_state),
-    '#description' => t('When not empty, Callback URL is validated against this Regex.'),
-  );
-
-  $form['callback']['devconnect_tooltip_callback_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Callback URL Field Tooltip'),
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_tooltip_callback_url', '', $form_state),
-    '#description' => t('If Callback URL Regex is not empty, this should contain a human-readable high-level description of the valid pattern, to be shown in the browser when the user enters an invalid pattern.'),
-  );
-
-  $form['analytics'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('App Performance settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  );
-
-
-  $form['analytics']['devconnect_show_analytics'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Show Developer App performance tab?'),
-    '#return_value' => '1',
-    '#default_value' => _devconnect_developer_apps_get_default_value('devconnect_show_analytics', 0, $form_state)
-  );
-
-  // Analytics environments
-  $options = array();
-  try {
-    $dca = new Apigee\ManagementAPI\DeveloperAppAnalytics(devconnect_default_org_config());
-    $environments = $dca->getAllEnvironments();
-    foreach ($environments as $environment) {
-      switch ($environment) {
-        case 'prod':
-          $env_name = 'Production';
-          break;
-        case 'test':
-          $env_name = 'Test';
-          break;
-        case 'dev':
-          $env_name = 'Development';
-          break;
-        default:
-          $env_name = $environment;
-      }
-      $options[$environment] = t($env_name);
-    }
-  } catch (Apigee\Exceptions\ResponseException $e) {
-    // Ignore this exception. It is probably the result of a misconfigured
-    // endpoint.
-    $options = array('prod' => 'Production');
-  }
-  if (empty($options) || array_key_exists('prod', $options)) {
-    $default_env = 'prod';
-  }
-  else {
-    $default_env = $environments[0];
-  }
-  $form['analytics']['devconnect_analytics_environment'] = array(
-    '#type' => 'radios',
-    '#title' => t('Environment to query for analytics data'),
-    '#default_value' => $default_env,
-    '#options' => $options
-  );
-
-  $form['actions'] = array(
-    '#type' => 'actions',
-    'submit' => array(
-      '#type' => 'submit',
-      '#value' => t('Save Changes')
-    )
-  );
-
-  return $form;
-}
-
-function _devconnect_developer_apps_render_apiproducts($form, &$form_state) {
-  return $form['apiproduct']['devconnect_default_api_product'];
-}
-
-function devconnect_developer_apps_config_submit($form, &$form_state) {
-  foreach ($form_state['values'] as $key => $value) {
-    if (substr($key, 0, 10) != 'devconnect') {
-      continue;
-    }
-    if ($key == 'devconnect_default_api_product' && is_array($value)) {
-      $defaults = array();
-      foreach ($value as $n => $v) {
-        if ($v) {
-          $defaults[] = $v;
-        }
-      }
-      $value = $defaults;
-    }
-    variable_set($key, $value);
-  }
-  variable_set('myapis', $form_state['values']['myapis']);
-  drupal_set_message(t('The configuration options have been saved.'));
-}
 
 /**
  * Implements hook_theme().
@@ -634,11 +395,18 @@ function devconnect_developer_apps_getlist($user) {
         $entity->credentialApiProducts[$key]['displayName'] = (array_key_exists($product['apiproduct'], $api_products) ? $api_products[$product['apiproduct']] : $product['apiproduct']);
       }
 
+      if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+        $display_name = $entity->attributes['DisplayName'];
+      }
+      else {
+        $display_name = $entity->name;
+      }
+
       $row = array(
         'org_name' => $entity->orgName,
-        'app_name' => $entity->name,
+        'app_name' => $display_name,
         'callback_url' => $entity->callbackUrl,
-        'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes),
+        'attributes' => _devconnect_developer_apps_get_attributes($entity->attributes, TRUE),
         'createdAt' => floor($entity->createdAt / 1000),
         'credential' => array(
           'apiProducts' => $entity->credentialApiProducts,
@@ -691,7 +459,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   $module_path = drupal_get_path('module', 'devconnect_developer_apps');
   drupal_add_css("$module_path/devconnect_developer_apps.css");
 
-  $entity = NULL;
+  $entity = $app_name = NULL;
   if (isset($app_id)) {
     $entities = entity_load('developer_app', array($app_id), array('mail' => $account->mail));
     if (count($entities) == 0) {
@@ -742,40 +510,59 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
     '#title' => $header_caption,
   );
 
-  if (isset($app_name)) {
-    $form['existing_machine_name'] = array(
-      '#type' => 'item',
-      '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
-      '#markup' => check_plain($app_name),
-      '#id' => 'existing_machine_name'
-    );
-    $form['machine_name'] = array(
-      '#type' => 'value',
-      '#value' => $app_name
-    );
-
+  if (isset($entity)) {
+    if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+      $display_name = $entity->attributes['DisplayName'];
+    }
+    else {
+      $display_name = $entity->name;
+    }
   }
   else {
-    $form['machine_name'] = array(
-      '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
-      '#type' => 'textfield',
-      '#id' => 'new_machine_name',
-      '#default_value' => '',
-      '#required' => TRUE,
-      '#size' => 145,
-      '#attributes' => array(
-        'pattern' => '^[^&]+$',
-        'title' => ((bool) variable_get('myapis')) ? t('The API Name may not contain ampersands') : t('The App Name may not contain ampersands')
-      )
-    );
+    $display_name = '';
   }
-  if (variable_get('devconnect_callback_handling', 'require') != 'none') {
+
+  $form['name']['human'] = array(
+    '#title' => ((bool) variable_get('myapis')) ? t('API Name') : t('App Name'),
+    '#type' => 'textfield',
+    '#default_value' => $display_name,
+    '#maxlength' => 64,
+    '#required' => TRUE
+  );
+  $form['name']['machine'] = array(
+    '#type' => 'machine_name',
+    '#default_value' => $app_name,
+    '#maxlength' => 64,
+    '#machine_name' => array(
+      'source' => array('name', 'human'),
+      'label' => t('Internal name'),
+      'replace_pattern' => '[^A-Za-z0-9_$%-]+',
+      'replace' => '-',
+      'exists' => 'devconnect_developer_apps_machine_name_exists',
+      'error' => 'The Internal Name must contain only letters, digits, underscores, hyphen, percent, or dollar sign.'
+    ),
+    '#required' => TRUE,
+    '#disabled' => ($app_name !== NULL),
+    '#access' => TRUE,
+    '#element_validate' => array('devconnect_developer_apps_machine_name_validate')
+  );
+  $form['attribute_DisplayName'] = array(
+    '#type' => 'value',
+    '#value' => ($app_name !== NULL)?$app_name:'',
+  );
+  if ($app_name !== NULL) {
+    $form['name']['machine']['#access'] = FALSE;
+  }
+
+  $form['#attached'][] = 'misc/machine-name.js';
+
+  if (variable_get('devconnect_callback_handling', 'none') != 'none') {
     $form['callback_url'] = array(
       '#title' => t('Callback URL'),
       '#type' => 'textfield',
       '#id' => 'new_callback_url',
       '#default_value' => (isset($app_name) ? $entity->callbackUrl : ''),
-      '#required' => (variable_get('devconnect_callback_handling', 'require') == 'require'),
+      '#required' => (variable_get('devconnect_callback_handling', 'none') == 'require'),
       '#size' => 145,
     );
     $regex = variable_get('devconnect_validate_callback_url', NULL);
@@ -799,6 +586,9 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   // defined custom attributes to appear in this form.
   $custom_attributes = module_invoke_all('devconnect_app_attributes');
   foreach ($custom_attributes as $machine_name => $attribute) {
+    if ($machine_name == 'DisplayName') {
+      continue;
+    }
     $name = $attribute['name'];
     $default_value = (array_key_exists('default', $attribute) ? $attribute['default'] : NULL);
     $description = (array_key_exists('description', $attribute) ? $attribute['description'] : NULL);
@@ -840,6 +630,9 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
         '#default_value' => $default_value,
         '#required' => $required
       );
+      if (array_key_exists('weight', $attribute)) {
+        $form[$form_field_name]['#weight'] = $attribute['weight'];
+      }
       if ($description) {
         $form[$form_field_name]['#description'] = t($description);
       }
@@ -959,7 +752,7 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
       if ($widget_type == 'radios') {
         $api_product_default = empty($api_product_default) ? '' : $api_product_default[0];
         unset($form_state['input']['api_product']); //Need to unset this so that the right radios gets selected on ajax
-        if (!isset($options[$api_product_default])) {
+        if (!isset($options[$api_product_default]) && count($options) > 1) {
           $api_product_default = array_shift(array_keys($options));
         }
       }
@@ -1025,6 +818,22 @@ function devconnect_developer_apps_edit_form($form, &$form_state, $account, $app
   return $form;
 }
 
+/**
+ * Handles validation of the app internal name (machine name).
+ *
+ * We must grandfather in older legal app names that contained spaces.
+ *
+ * @param array $element
+ * @param array $form_state
+ */
+function devconnect_developer_apps_machine_name_validate(&$element, &$form_state) {
+  $old_pattern = $element['#machine_name']['replace_pattern'];
+  // Grandfather spaces in.
+  $element['#machine_name']['replace_pattern'] = str_replace('Za', 'Z a', $old_pattern);
+  form_validate_machine_name($element, $form_state);
+  $element['#machine_name']['replace_pattern'] = $old_pattern;
+}
+
 function devconnect_developer_apps_reload_products_ajax($form, $form_state) {
   return $form['api_product'];
 }
@@ -1057,19 +866,20 @@ function devconnect_developer_apps_pattern_validate(array $element, array &$form
  * @param array $form_state
  */
 function devconnect_developer_apps_edit_form_validate(array $form, array &$form_state) {
-  if ($form['machine_name']['#type'] == 'value') {
+  if (!$form['name']['machine']['#access']) {
     // No need to validate existing machine names.
     return;
   }
-  if (strlen(trim($form_state['values']['machine_name'])) == 0) {
+  if (strlen(trim($form_state['values']['machine'])) == 0) {
     // If machine name was left empty, let default form validator handle it.
     // If we don't return here, the code below will still execute and throw
     // warnings.
     return;
   }
-  $machine_name = strtolower($form_state['values']['machine_name']);
-  if (strpos($machine_name, '&') !== FALSE) {
-    form_error($form['machine_name'], t('The App Name may not contain ampersands.'));
+  $machine_name = strtolower($form_state['values']['machine']);
+  if (preg_match('![^A-Za-z0-9_$% -]!', $machine_name)) {
+    // N.B. space is permitted but not documented here
+    form_error($form['machine_name'], t('The App Name may only contain letters, numbers, underscores, dollars, percent, or hyphens.'));
     return;
   }
 
@@ -1096,6 +906,11 @@ function devconnect_developer_apps_edit_form_validate(array $form, array &$form_
 function devconnect_developer_apps_edit_form_submit(array $form, array &$form_state) {
   // Invoke hook_devconnect_developer_app_presave on all implementing modules.
   // If any module returns FALSE, abort.
+
+  // Backwards compatibility
+  $form_state['values']['attribute_DisplayName'] = $form_state['values']['human'];
+  $form_state['values']['machine_name'] = $form_state['values']['machine'];
+
   $continue = devconnect_developer_apps_hook('presave', $form_state);
   if (!$continue) {
     return;
@@ -1231,6 +1046,28 @@ function devconnect_developer_apps_edit_form_submit(array $form, array &$form_st
 }
 
 /**
+ * Callback to ensure uniqueness of app name for the given developer.
+ *
+ * @param string $value
+ * @param array $element
+ * @param array $form_state
+ * @return bool
+ */
+function devconnect_developer_apps_machine_name_exists($value, array $element, array $form_state) {
+  if (empty($value) || empty($form_state['values']['uid'])) {
+    return TRUE; // is this the right thing to do?
+  }
+  $uid = $form_state['values']['uid'];
+  $name = db_select('dc_dev_app', 'a')
+    ->fields('a', array('name'))
+    ->condition('uid', $uid)
+    ->condition('name', $value)
+    ->execute()
+    ->fetchField();
+  return ($name !== FALSE);
+}
+
+/**
  * Form constructor for deleting apps. This is called from a menu callback via drupal_get_form.
  *
  * Incoming URL takes the following form:
@@ -1294,7 +1131,6 @@ function devconnect_developer_app_delete_form($form, &$form_state, $user, $appId
     '#markup' => l(t('Cancel'), 'user/' . $uid_arg . '/apps', array('attributes' => array('class' => array('cancel-link btn')))),
     '#weight' => 11,
   );
-
   $form['#entity'] = $entity;
 
   return $form;
@@ -1425,6 +1261,13 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
   $access_type = $entity->accessType;
   $raw_result = $entity->debugData;
 
+  if (array_key_exists('DisplayName', $entity->attributes) && !empty($entity->attributes['DisplayName'])) {
+    $display_name = $entity->attributes['DisplayName'];
+  }
+  else {
+    $display_name = $entity->name;
+  }
+
   $info = array(
     'account' => $user,
     'access_type' => ($access_type == 'both' ? 'read/write' : $access_type),
@@ -1433,7 +1276,7 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
     'status' => $entity->status,
     'attributes' => array(),
     'credentials' => array(),
-    'page_title' => $entity->name,
+    'page_title' => $display_name,
     'breadcrumb' => $breadcrumb,
     'raw_data' => $raw_result['data'],
     'analytics_chart' => FALSE
@@ -1522,11 +1365,14 @@ function _devconnect_developer_apps_detail($entity, $user, $page = TRUE) {
  * @param $app_attributes
  * @return array
  */
-function _devconnect_developer_apps_get_attributes($app_attributes) {
+function _devconnect_developer_apps_get_attributes($app_attributes, $omit_display_name = FALSE) {
   // Invoke custom hook
   $shown_attributes = module_invoke_all('devconnect_attributes_display_list');
   $items = array();
   foreach ($shown_attributes as $attr_name => $attr_display) {
+    if ($omit_display_name && $attr_name == 'DisplayName') {
+      continue;
+    }
     foreach ($app_attributes as $result_attr_name => $result_attr_value) {
       if ($result_attr_name == $attr_name) {
         $items[$attr_display] = $result_attr_value;
@@ -1683,155 +1529,6 @@ function devconnect_developer_apps_view_full($entity, $page = TRUE) {
     $user = user_load($uid);
   }
   return _devconnect_developer_apps_detail($entity, $user, $page);
-}
-
-
-/**
- * Implements hook_tokens().
- *
- * @param string $type
- * @param array $tokens
- * @param array $data
- * @param array $options
- *
- * @return array
- */
-function devconnect_developer_apps_tokens($type, array $tokens, array $data = array(), array $options = array()) {
-  if ($type != 'developer_app' || empty($data['developer_app'])) {
-    return array();
-  }
-  $url_options = array('absolute' => TRUE);
-  if (isset($options['language'])) {
-    $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
-  }
-  else {
-    $language_code = NULL;
-  }
-  $sanitize = !empty($options['sanitize']);
-  $app = $data['developer_app'];
-  $replacements = array();
-  foreach ($tokens as $name => $original) {
-    switch ($name) {
-      case 'appUrl':
-        $replacements[$original] = url('user/' . $app->uid . '/apps/' . $app->name, $url_options);
-        break;
-      // Timestamps
-      case 'createdAt':
-      case 'modifiedAt':
-        $replacements[$original] = format_date(floor($app->$name / 1000), 'medium', '', NULL, $language_code);;
-        break;
-      // Arrays of strings
-      case 'apiProducts':
-        $replacements[$original] = $sanitize ? check_plain(join(', ', $app->$name)) : join(', ', $app->$name);
-        break;
-      case 'developerUid':
-        $replacements[$original] = $app->uid;
-        break;
-      default:
-        $replacements[$original] = $sanitize ? check_plain($app->$name) : $app->$name;
-        break;
-    }
-  }
-
-  return $replacements;
-}
-
-/**
- * Implements hook_token_info().
- *
- * @return array
- */
-function devconnect_developer_apps_token_info() {
-  $type = array(
-    'name' => t('Developer Apps'),
-    'description' => t('Tokens related to developer apps'),
-    'needs-data' => 'developer_app'
-  );
-  $app['apiProducts'] = array(
-    'name' => t('API Products'),
-    'description' => t('List of all API Products used by the app.')
-  );
-  $app['attributes'] = array(
-    'name' => t('Attributes'),
-    'description' => t('List of custom attributes for this app.')
-  );
-  $app['callbackUrl'] = array(
-    'name' => t('Callback URL'),
-    'description' => t('Callback URL configured for this app.')
-  );
-  $app['createdAt'] = array(
-    'name' => t('Created At'),
-    'description' => t('Timestamp at which the app was created.')
-  );
-  $app['modifiedAt'] = array(
-    'name' => t('Modified At'),
-    'description' => t('Timestamp at which the app was last modified.')
-  );
-  $app['name'] = array(
-    'name' => t('App Name'),
-    'description' => t('The machine-readable name of the app.')
-  );
-  $app['status'] = array(
-    'name' => t('App Status'),
-    'description' => t('The active status of this app.')
-  );
-  $app['description'] = array(
-    'name' => t('Description'),
-    'description' => t('Description of the app, if present.')
-  );
-  $app['consumerKey'] = array(
-    'name' => t('Consumer Key'),
-    'description' => t('The Consumer Key (public key or API Key) for this app.')
-  );
-  $app['consumerSecret'] = array(
-    'name' => t('Consumer Secret'),
-    'description' => t('The Consumer Secret (private key) for this app.')
-  );
-  $app['credentialStatus'] = array(
-    'name' => t('Credential Status'),
-    'description' => t('Status of the Consumer Key/Secret credential.')
-  );
-  $app['credentialAttributes'] = array(
-    'name' => t('Credential Attributes'),
-    'description' => t('Custom attributes of the Consumer Key/Secret credential.')
-  );
-  $app['developer'] = array(
-    'name' => t('Developer Email'),
-    'description' => t('Email address of the app’s developer.')
-  );
-
-  $app['appUrl'] = array(
-    'name' => t('App URL'),
-    'description' => t('URL on this site where the app’s details may be viewed.')
-  );
-  $app['developerUid'] = array(
-    'name' => t('Drupal User ID'),
-    'description' => t('The unique numeric uid of the developer who owns the app.')
-  );
-  $app['overallStatus'] = array(
-    'name' => t('Overall Status'),
-    'description' => t('The overall status, determined from the hierarchy of API Product, Key and App statuses.')
-  );
-
-  return array(
-    'types' => array('developer_app' => $type),
-    'tokens' => array('developer_app' => $app),
-  );
-}
-
-/**
- * Implements hook_token_info_alter().
- *
- * Removes [app:uid] token because it clashes with other tokens. We supply
- * [app:developerUid] token for this purpose instead.
- *
- * @param $data
- */
-function devconnect_developer_apps_token_info_alter(&$data) {
-  if (array_key_exists('uid', $data['tokens']['developer_app'])) {
-    unset($data['tokens']['developer_app']['uid']);
-  }
 }
 
 /**
@@ -2019,53 +1716,99 @@ function devconnect_developer_apps_write_to_cache($entity, $ensure_clean = TRUE)
  * @param string $org
  * @param bool $truncate
  */
-function devconnect_developer_apps_sync_org($org, $truncate = FALSE) {
+function devconnect_developer_apps_sync_products($org, $truncate = FALSE, $set_messages = FALSE) {
   $has_drush = function_exists('drush_print');
   if ($has_drush) {
     drush_print('Loading api_products for org '. $org);
   }
   $api_products = entity_load('api_product', array(), array('orgName' => $org));
+  $count = count($api_products);
   if ($has_drush) {
-    drush_print('Loaded ' . count($api_products) . ' api_products');
+    drush_print('Loaded ' . $count . ' api_products');
+  }
+  if ($count) {
+    if (lock_acquire(__FUNCTION__ . '_api_product', 5)) {
+      if ($has_drush) {
+        drush_print('Truncating table dc_api_product');
+      }
+      db_truncate('dc_api_product')->execute();
+      $api_products = array_values($api_products);
+      foreach ($api_products as $i => $product) {
+        if ($has_drush) {
+          drush_print('Writing api_product ' . $product->name . ' [' . ($i + 1) . '/' . $count . ']');
+        }
+        devconnect_developer_apps_write_to_cache($product, FALSE);
+      }
+      if ($has_drush) {
+        drush_print('Wrote ' . $count . ' api_products to cache');
+      }
+      lock_release(__FUNCTION__ . '_api_product');
+    }
+    else {
+      if ($has_drush) {
+        drush_print('Another process is currently caching API Products.');
+      }
+      elseif ($set_messages) {
+        drupal_set_message('Another process is currently caching API Products.', 'warning');
+      }
+    }
+  }
+}
+
+/**
+ * Syncs developer-apps and api-products caches with upstream Edge for a given
+ * org.
+ *
+ * @param string $org
+ * @param bool $truncate
+ */
+function devconnect_developer_apps_sync_apps($org, $truncate = FALSE, $set_messages = FALSE) {
+  $has_drush = function_exists('drush_print');
+  if ($has_drush) {
     drush_print('Loading developer_apps for org ' . $org);
   }
   $apps = entity_load('developer_app', array(), array('orgName' => $org));
+  $count = count($apps);
   if ($has_drush) {
-    drush_print('Loaded ' . count($apps) . ' developer_apps');
+    drush_print('Loaded ' . $count . ' developer_apps');
   }
 
-  if (empty($api_products) && empty($apps)) {
-    return;
-  }
-  if ($truncate) {
-    module_load_install('devconnect_developer_apps');
-    $tables = array_keys(devconnect_developer_apps_schema());
-    foreach ($tables as $table) {
-      if ($has_drush) {
-        drush_print('Truncating table ' . $table);
+  if ($count) {
+    if (lock_acquire(__FUNCTION__ . '_developer_app', 5)) {
+      if ($truncate) {
+        module_load_install('devconnect_developer_apps');
+        $tables = array_keys(devconnect_developer_apps_schema());
+        foreach ($tables as $table) {
+          if ($table == 'dc_api_product') {
+            continue;
+          }
+          if ($has_drush) {
+            drush_print('Truncating table ' . $table);
+          }
+          db_truncate($table)->execute();
+        }
       }
-      db_truncate($table)->execute();
-    }
-  }
 
-  $api_products = array_values($api_products);
-  $product_count = count($api_products);
-  foreach ($api_products as $i => $product) {
-    if ($has_drush) {
-      drush_print('Writing api_product ' . $product->name . ' [' . ($i + 1) . '/' . $product_count . ']');
+      $apps = array_values($apps);
+      foreach ($apps as $i => $app) {
+        if ($has_drush) {
+          drush_print('Writing developer_app ' . $app->name . ' [' . ($i + 1) . '/' . $count . ']');
+        }
+        devconnect_developer_apps_write_to_cache($app, FALSE);
+      }
+      if ($has_drush) {
+        drush_print('Wrote ' . $count . ' developer_apps to cache');
+      }
+      lock_release(__FUNCTION__ . '_developer_app');
     }
-    devconnect_developer_apps_write_to_cache($product, FALSE);
-  }
-  $apps = array_values($apps);
-  $app_count = count($apps);
-  foreach ($apps as $i => $app) {
-    if ($has_drush) {
-      drush_print('Writing developer_app ' . $app->name . ' [' . ($i + 1) . '/' . $app_count . ']');
+    else {
+      if ($has_drush) {
+        drush_print('Another process is currently caching Developer Apps.');
+      }
+      elseif ($set_messages) {
+        drupal_set_message('Another process is currently caching Developer Apps.', 'warning');
+      }
     }
-    devconnect_developer_apps_write_to_cache($app, FALSE);
-  }
-  if ($has_drush) {
-    drush_print('Finished processing org ' . $org);
   }
 }
 
@@ -2075,32 +1818,34 @@ function devconnect_developer_apps_sync_org($org, $truncate = FALSE) {
  * Refreshes our developer_app and api_product caches.
  */
 function devconnect_developer_apps_cron() {
-  $has_drush = function_exists('drush_print');
   static $already_ran = FALSE;
-  if ($has_drush) {
-    drush_print('entering ' . __FUNCTION__);
-  }
-
   // Prevent this from running twice (drush cron may do this)
   if ($already_ran) {
-    if ($has_drush) {
-      drush_print(__FUNCTION__ . ' already ran; skipping');
-    }
     return;
   }
   $already_ran = TRUE;
-  $client =& devconnect_default_org_config();
-  devconnect_developer_apps_sync_org($client->orgName, TRUE);
 
-  if ($has_drush) {
-    drush_print('Normal exit from ' . __FUNCTION__);
-  }
+  $client = devconnect_default_org_config();
+  devconnect_developer_apps_sync_products($client->orgName, TRUE, TRUE);
+  devconnect_developer_apps_sync_apps($client->orgName, TRUE, TRUE);
 }
 
+/**
+ * Returns specified API Products. API Products are read from cache unless
+ * caching is specifically disabled, in which case they are read from Edge.
+ *
+ * @param bool $show_private
+ * @param bool $names
+ * @param string $orgName
+ * @return array
+ */
 function devconnect_developer_apps_get_api_products($show_private = FALSE, $names = FALSE, $orgName = 'default') {
   if ($orgName == 'default') {
-    $config =& devconnect_default_org_config();
+    $config = devconnect_default_org_config();
     $orgName = $config->orgName;
+  }
+  if (!variable_get('devconnect_api_product_cache_enable', 1)) {
+    return entity_load('api_product', $names, array('show_private' => $show_private, 'orgName' => $orgName));
   }
   $query = db_select('dc_api_product', 'a')
     ->fields('a', array('name', 'display_name', 'approval_type', 'description', 'is_public', 'org_name'))

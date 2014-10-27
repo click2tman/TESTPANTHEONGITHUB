@@ -543,7 +543,7 @@ abstract class AbstractApp extends Base
     /**
      * Returns the array of name/value pairs used to extend the default
      * credential's profile.
-     * @return string
+     * @return array
      */
     public function getCredentialAttributes()
     {
@@ -931,7 +931,6 @@ abstract class AbstractApp extends Base
             }
         } else {
             $payload['apiProducts'] = $this->getApiProducts();
-            $created_new_key = true;
         }
 
         // Let subclasses fiddle with the payload here
@@ -943,13 +942,20 @@ abstract class AbstractApp extends Base
         $credential_response = null;
 
         if (count($response['credentials']) > 0) {
-            $credential_attributes = array();
             $current_credential = null;
             // Find credential -- it should have the maximum issuedAt date.
             $max_issued_at = -1;
             $credential_index = null;
             foreach ($response['credentials'] as $i => $cred) {
                 $issued_at = (array_key_exists('issuedAt', $cred) ? intval($cred['issuedAt']) : 0);
+                if ($issued_at == 0 && array_key_exists('attributes', $cred)) {
+                    foreach ($cred['attributes'] as $attrib) {
+                        if ($attrib['name'] == 'create_date') {
+                            $issued_at = $attrib['value'] * 1000;
+                            break;
+                        }
+                    }
+                }
                 if ($max_issued_at == -1 || $issued_at > $max_issued_at) {
                     $max_issued_at = $issued_at;
                     $credential_index = $i;
@@ -1124,9 +1130,21 @@ abstract class AbstractApp extends Base
 
         $new_credential = $this->responseObj;
         // We now have the new key, sans apiproducts. Let us add them now.
-        $new_credential['apiProducts'] = $this->getCredentialApiProducts();
+        $new_credential['apiProducts'] = array();
+        foreach($this->getCredentialApiProducts() as $apiproduct) {
+            $new_credential['apiProducts'][] = $apiproduct['apiproduct'];
+        }
+        $new_credential['attributes'] = array();
+        foreach ($this->getCredentialAttributes() as $name => $value) {
+            if ($name == 'create_date') {
+                continue;
+            }
+            $new_credential['attributes'][] = array('name' => $name, 'value' => $value);
+        }
+        $new_credential['attributes'][] = array('name' => 'create_date', 'value' => (string)time());
         $key = $new_credential['consumerKey'];
         $url = rawurlencode($this->getName()) . '/keys/' . rawurlencode($key);
+
         $this->post($url, $new_credential);
         $credential = $this->responseObj;
 
@@ -1138,13 +1156,78 @@ abstract class AbstractApp extends Base
             $this->setConsumerSecret($credential['consumerSecret']);
             $this->setCredentialScopes($credential['scopes']);
             $this->setCredentialStatus($credential['status']);
-            $this->setCredentialIssueDate($credential['issuedAt']);
+            if (array_key_exists('issuedAt', $credential)) {
+                $this->setCredentialIssueDate($credential['issuedAt']);
+            }
             $this->setCredentialExpiryDate($credential['expiresAt']);
             $this->clearCredentialAttributes();
             foreach ($credential['attributes'] as $attribute) {
                 $this->setCredentialAttribute($attribute['name'], $attribute['value']);
             }
         }
+    }
+
+    /**
+     * Deletes an attribute from an app. Returns true if successful, else false.
+     *
+     * @param string $attr_name
+     * @return bool
+     */
+    public function deleteAttribute($attr_name)
+    {
+        $cached_logger = null;
+        // Make sure that errors are not logged by replacing the logger with a
+        // dummy that routes errors to /dev/null
+        if (!(self::$logger instanceof \Psr\Log\NullLogger)) {
+            $cached_logger = self::$logger;
+            self::$logger = new \Psr\Log\NullLogger();
+        }
+        $returnVal = false;
+        $url = rawurlencode($this->getName()) . '/attributes/' . rawurlencode($attr_name);
+        try {
+            $this->http_delete($url);
+            $returnVal = true;
+        } catch (ResponseException $e) {
+        }
+        // Restore logger to its previous state
+        if (!empty($cached_logger)) {
+            self::$logger = $cached_logger;
+        }
+        if ($returnVal && array_key_exists($attr_name, $this->attributes)) {
+            unset($this->attributes[$attr_name]);
+        }
+        return $returnVal;
+    }
+
+    /**
+     * Deletes an attribute from the active credential of an app. Returns true if successful, else false.
+     *
+     * @param $attr_name
+     */
+    public function deleteCredentialAttribute($attr_name)
+    {
+        $cached_logger = null;
+        // Make sure that errors are not logged by replacing the logger with a
+        // dummy that routes errors to /dev/null
+        if (!(self::$logger instanceof \Psr\Log\NullLogger)) {
+            $cached_logger = self::$logger;
+            self::$logger = new \Psr\Log\NullLogger();
+        }
+        $returnVal = false;
+        $url = rawurlencode($this->getName()) . '/keys/' . rawurlencode($this->getConsumerKey()) . '/attributes/' . rawurlencode($attr_name);
+        try {
+            $this->http_delete($url);
+            $returnVal = true;
+        } catch (ResponseException $e) {
+        }
+        // Restore logger to its previous state
+        if (!empty($cached_logger)) {
+            self::$logger = $cached_logger;
+        }
+        if ($returnVal && array_key_exists($attr_name, $this->credentialAttributes)) {
+            unset($this->credentialAttributes[$attr_name]);
+        }
+        return $returnVal;
     }
 
     /**

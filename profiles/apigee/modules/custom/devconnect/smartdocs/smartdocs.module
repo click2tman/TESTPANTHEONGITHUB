@@ -1,0 +1,570 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function smartdocs_init() {
+  module_load_include('inc', 'smartdocs', 'admin/smartdocs.methods');
+  module_load_include('inc', 'smartdocs', 'admin/smartdocs.models');
+  module_load_include('inc', 'smartdocs', 'admin/smartdocs.resources');
+  module_load_include('inc', 'smartdocs', 'admin/smartdocs.revisions');
+  module_load_include('inc', 'smartdocs', 'smartdocs.theme');
+  drupal_add_css(drupal_get_path('module', 'smartdocs') . '/css/smartdocs.css');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function smartdocs_menu() {
+  $items = array();
+  $items['admin/smartdocs'] = array(
+    'title' => t('SmartDocs'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_models'),
+    'access arguments' => array('administer smartdocs content'),
+    'file' => 'admin/smartdocs.models.inc',
+    'weight' => -100,
+  );
+  $items['admin/smartdocs/settings'] = array(
+    'title' => t('Settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_settings'),
+    'access arguments' => array('administer smartdocs content'),
+    'weight' => 100,
+  );
+  $items['admin/smartdocs/models'] = array(
+    'title' => t('Models'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_models'),
+    'access arguments' => array('administer smartdocs content'),
+    'file' => 'admin/smartdocs.models.inc',
+  );
+  $items['admin/smartdocs/models/add'] = array(
+    'title' => t('Add Model'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('smartdocs_add_model'),
+    'access arguments' => array('administer smartdocs content'),
+    'file' => 'admin/smartdocs.models.inc',
+    'weight' => -100,
+  );
+  $models = entity_load('smartdocs_model');
+  foreach ($models as $model) {
+    $rows[$model['displayName']] = $model;
+  }
+  ksort($rows);
+  foreach ($rows as $model) {
+    $items['admin/smartdocs/models/' . $model['name']] = array(
+      'title' => $model['displayName'],
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_model_detail', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+      'weight' => 94,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/import'] = array(
+      'title' => t('Import'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_import_model', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+      'weight' => 95,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/revisions'] = array(
+      'title' => t('API Revisions'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_revision_detail', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.revisions.inc',
+      'weight' => 96,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/add'] = array(
+      'title' => t('Add API Revision'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_add_revision', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.revisions.inc',
+      'weight' => 97,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/export'] = array(
+      'title' => t('Export'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_model_export', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+      'weight' => 98,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/export/%'] = array(
+      'title' => t('Export'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_model_export', 3, 5),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/settings'] = array(
+      'title' => t('Settings'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_model_settings', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+      'weight' => 99,
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/revisions/%'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_resource_detail', 3, 5),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.resources.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/resource/add/%'] = array(
+      'title' => t('Add Resource'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_resource_add', 3, 6),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.resources.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/resource/edit/%/%'] = array(
+      'title' => t('Add Resource'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_resource_edit', 3, 6, 7),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.resources.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/method/add/%/%'] = array(
+      'title' => t('Add Method'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_method_add', 3, 6, 7),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.methods.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/method/edit/%/%/%'] = array(
+      'title' => t('Edit Method'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_method_edit', 3, 6, 7, 8),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.methods.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/revisions/%/auth'] = array(
+      'title' => t('Authentication Settings'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_revision_auth', 3, 5),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.revisions.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/revisions/%/edit'] = array(
+      'title' => t('Edit Revision'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_edit_revision', 3, 5),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.revisions.inc',
+    );
+    $items['admin/smartdocs/models/' . $model['name'] . '/delete'] = array(
+      'title' => t('Delete'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('smartdocs_model_delete', 3),
+      'access arguments' => array('administer smartdocs content'),
+      'file' => 'admin/smartdocs.models.inc',
+      'weight' => 100,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function smartdocs_permission() {
+	return array(
+		'administer smartdocs content' => array(
+			'title' => t('Administer SmartDocs Content'),
+			'description' => t('Perform administration tasks for the SmartDocs module.'),
+		),
+	);
+}
+
+/**
+ * Implements hook_flush_caches().
+ *
+ * @return array
+ */
+function smartdocs_flush_caches() {
+  return array('cache_smartdocs');
+}
+
+
+/**
+ * SmartDocs Settings Form
+ *
+ * @param $form
+ * @param $form_state
+ * @param null $model
+ * @return mixed
+ */
+function smartdocs_settings($form, $form_state, $model = NULL) {
+  $form['cache_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cache Settings for SmartDocs'),
+    '#collapsed' => FALSE,
+    '#collapsible' => FALSE,
+  );
+  $form['cache_settings']['clear_cache'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear SmartDocs HTML Caches'),
+    '#submit' => array('smartdocs_flush_caches')
+  );
+	$form['products'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('API Products / SmartDocs Settings'),
+		'#collapsed' => TRUE,
+		'#collapsible' => TRUE,
+	);
+	$form['products']['info'] = array(
+		'#markup' => '<p>This section creates a correlation between your products and SmartDocs internally.</p><br/>'
+	);
+	$models = entity_load('smartdocs_model');
+	$options = array();
+	foreach($models as $model) {
+		$options[(isset($model['displayName'])) ? $model['displayName'] : $model['name']] = $model['name'];
+	}
+	$options = array_flip($options);
+	natcasesort($options);
+
+	$api_products = entity_load('api_product', FALSE, array('show_private' => TRUE));
+	$products = array();
+	foreach($api_products as $product) {
+		$products[$product->displayName] = $product->name;
+	}
+	$products = array_flip($products);
+	natcasesort($products);
+
+	foreach ($products as $machine => $product) {
+		$form['products'][$machine . '_docs'] = array(
+			'#type' => 'select',
+			'#title' => t($product . ' Models'),
+			'#default_value' => variable_get($machine . '_docs', array()),
+			'#description' => t('Specify the SmartDocs model that relates to the product.'),
+			'#options' => $options,
+			'#multiple' => TRUE,
+      '#attributes' => array(
+        'style' => 'height:200px;',
+      ),
+			'#suffix' => '<br/>',
+		);
+	}
+  $form['settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced Settings'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['settings']['use_docgen_templates'] = array(
+    '#type' => 'checkbox',
+    '#disabled' => TRUE,
+    '#title' => t('Use Modeling Template System'),
+    '#default_value' => variable_get('use_docgen_templates', 1),
+    '#description' => t('By enabling this setting, you will override all node templates with model templates.'),
+    '#suffix' => '<br/>',
+  );
+  $form['settings']['api_proxy'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Management API Override Settings'),
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE,
+  );
+  $form['settings']['api_proxy']['use_local_assets'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Local SmartDocs JS/CSS'),
+    '#default_value' => variable_get('use_local_assets', 0),
+    '#description' => t('By enabling this setting, you will use local assets hosted by DevPortal.'),
+    '#suffix' => '<br/>',
+  );
+	$form['settings']['api_proxy']['local_asset_version'] = array(
+		'#type' => 'select',
+		'#title' => t('Local SmartDocs JS/CSS Version'),
+		'#default_value' => variable_get('local_asset_version', '3'),
+		'#description' => t('By enabling this setting, you will use local assets hosted by DevPortal.'),
+		'#options' => array(
+			'1' => 'v1',
+			'2' => 'v2',
+			'3' => 'v3',
+		),
+		'#suffix' => '<br/>',
+	);
+  $form['settings']['api_proxy']['use_api_proxy_url'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Management API URL Override'),
+    '#default_value' => variable_get('use_api_proxy_url', 0),
+    '#description' => t('By enabling this setting, you will override the default devportal endpoint for SmartDocs calls.'),
+    '#suffix' => '<br/>',
+  );
+  $form['settings']['api_proxy']['api_proxy_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Management API URL Override'),
+    '#default_value' => variable_get('api_proxy_url', 'https://api.enterprise.apigee.com/v1'),
+  );
+	$url = l('SmartDocs Documentation', 'http://apigee.com/docs/developer-services/content/using-smartdocs-document-apis', array(
+		'html' => TRUE,
+		'attributes' => array(
+			'target' => '_blank',
+		)
+	));
+	$learn = 'For more information, including configuration of the Management API URL Override, please consult: ';
+	$form['settings']['api_proxy']['api_proxy_info'] = array(
+		'#markup' => $learn . $url,
+	);
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * @param $existing
+ * @param $type
+ * @param $theme
+ * @param $path
+ * @return array
+ */
+function smartdocs_theme($existing, $type, $theme, $path) {
+  $path = drupal_get_path('module', 'smartdocs');
+  return array(
+    'smartdocs_models_table' => array(
+      'render element' => 'form',
+      'file' => 'smartdocs.theme.inc'
+    ),
+    'smartdocs_revisions_table' => array(
+      'render element' => 'form',
+      'file' => 'smartdocs.theme.inc'
+    ),
+    'smartdocs_method' => array(
+      'variables' => array(
+        'vars' => NULL,
+        'mid' => NULL,
+      ),
+      'template' => 'smartdocs-method',
+      'path' => $path . '/templates'
+    ),
+  );
+}
+
+/**
+ * Makes model name usable across the system.
+ *
+ * @param $model
+ * @return string
+ */
+function smartdocs_model_name($model) {
+  $data = &drupal_static(__FUNCTION__);
+  if (!isset($data)) {
+    $mid = strtolower(preg_replace(array(
+      '/[^a-zA-Z0-9]+/',
+      '/-+/',
+      '/^-+/',
+      '/-+$/',
+    ), array('_', '_', '', ''), $model));
+    $data = substr($mid, 0, 32);
+    variable_set($model . '_content_type', $data);
+  }
+  return $data;
+}
+
+/**
+ * Makes model name usable across fields with one way hash
+ *
+ * @param $model
+ * @return string
+ */
+function smartdocs_field_name($model) {
+  $data = &drupal_static(__FUNCTION__);
+  if (!isset($data)) {
+    $mid = strtolower(preg_replace(array(
+      '/[^a-zA-Z0-9]+/',
+      '/-+/',
+      '/^-+/',
+      '/-+$/',
+    ), array('_', '_', '', ''), $model));
+    $hash = hash('md4', preg_replace('/[^a-zA-Z0-9]/', '', $mid));
+    if (strlen($mid) > 8) {
+      $data = substr($mid, 0, 4) . substr($hash, -4);
+    } else {
+      $data = substr($mid, 0, 8);
+    }
+    variable_set($model . '_field_type', $data);
+  }
+  return $data;
+}
+
+/**
+ * Implements hook_entity_info().
+ *
+ * @return array
+ */
+function smartdocs_entity_info() {
+  $info = array();
+  $info['smartdocs_model'] = array(
+    'label' => t('SmartDocs Model'),
+    'controller class' => 'SmartDocsModelController',
+    'fieldable' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  $info['smartdocs_revision'] = array(
+    'label' => t('SmartDocs Revision'),
+    'controller class' => 'SmartDocsRevisionController',
+    'fieldable' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  $info['smartdocs_resource'] = array(
+    'label' => t('SmartDocs Resource'),
+    'controller class' => 'SmartDocsResourceController',
+    'static cache' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  $info['smartdocs_method'] = array(
+    'label' => t('SmartDocs Methods'),
+    'controller class' => 'SmartDocsMethodController',
+    'fieldable' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  $info['smartdocs_doc'] = array(
+    'label' => t('SmartDocs Doc'),
+    'controller class' => 'SmartDocsDocController',
+    'fieldable' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  $info['smartdocs_template'] = array(
+    'label' => t('SmartDocs Template'),
+    'controller class' => 'SmartDocsTemplateController',
+    'fieldable' => TRUE,
+    'base table' => 'smartdata',
+    'entity keys' => array(
+      'id' => 'sid',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_node_delete()
+ *
+ * @param $node
+ */
+function smartdocs_node_delete($node) {
+	$nid = db_query('SELECT nid FROM {smartdata} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField();
+	if (!empty($nid)) {
+		$update = db_update('smartdata')->fields(array('nid' => null))
+			->condition('nid', $node->nid)
+			->execute();
+		if ($update) {
+			drupal_set_message(t('The node %title has also been unsynced from the %type model.', array(
+				'%title' => $node->title,
+				'%type' => $node->type,
+			)), 'warning');
+		}
+	}
+}
+
+/**
+ * Implements hook_views_api().
+ *
+ * @return array
+ */
+function smartdocs_views_api() {
+  return array(
+    'api' => 2.0,
+  );
+}
+
+/**
+ * Implements hook_views_default_views().
+ *
+ * @return array
+ */
+function smartdocs_views_default_views() {
+  $wrappers = stream_get_wrappers();
+  if (!in_array('private', $wrappers)) {
+    return array();
+  }
+  $views = array();
+  $files = file_scan_directory('private://', '/\.view$/');
+  foreach ($files as $absolute => $file) {
+    require $absolute;
+    if (isset($view)) {
+      $views[$file->name] = $view;
+    }
+  }
+  return $views;
+}
+
+/**
+ * Forms JSON into pretty format for editing
+ *
+ * @param $json
+ * @return string
+ */
+function _smartdocs_prettyprint($json) {
+  $result = '';
+  $level = 0;
+  $in_quotes = false;
+  $in_escape = false;
+  $ends_line_level = NULL;
+  $json_length = strlen( $json );
+
+  for( $i = 0; $i < $json_length; $i++ ) {
+    $char = $json[$i];
+    $new_line_level = NULL;
+    $post = "";
+    if( $ends_line_level !== NULL ) {
+      $new_line_level = $ends_line_level;
+      $ends_line_level = NULL;
+    }
+    if ( $in_escape ) {
+      $in_escape = false;
+    } else if( $char === '"' ) {
+      $in_quotes = !$in_quotes;
+    } else if( ! $in_quotes ) {
+      switch( $char ) {
+        case '}': case ']':
+        $level--;
+        $ends_line_level = NULL;
+        $new_line_level = $level;
+        break;
+
+        case '{': case '[':
+        $level++;
+        case ',':
+          $ends_line_level = $level;
+          break;
+
+        case ':':
+          $post = " ";
+          break;
+
+        case " ": case "\t": case "\n": case "\r":
+        $char = "";
+        $ends_line_level = $new_line_level;
+        $new_line_level = NULL;
+        break;
+      }
+    } else if ( $char === '\\' ) {
+      $in_escape = true;
+    }
+    if( $new_line_level !== NULL ) {
+      $result .= "\n".str_repeat( "\t", $new_line_level );
+    }
+    $result .= $char.$post;
+  }
+
+  return $result;
+}

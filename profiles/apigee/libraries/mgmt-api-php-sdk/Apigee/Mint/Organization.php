@@ -224,9 +224,11 @@ class Organization extends Base\BaseObject
         if ($reset) {
             $this->initValues();
         }
-        foreach ($data['address'] as $address_data) {
+        if(isset($data['address'])) {
+          foreach ($data['address'] as $address_data) {
             $address = new DataStructures\Address($address_data);
             $this->addresses[] = $address;
+          }
         }
 
         if (isset($data['parent'])) {
@@ -261,7 +263,7 @@ class Organization extends Base\BaseObject
      * @param $id Organization id, if not specified or null
      *   then this object's organization name is used
      *
-     * @return Text response from 4g request
+     * @return string Text response from 4g request
      */
     public function syncAllFrom4g($id = null)
     {

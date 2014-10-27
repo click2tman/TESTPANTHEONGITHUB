@@ -3,9 +3,9 @@
 use Apigee\Mint\MonetizationPackage;
 use Apigee\Mint\RatePlan;
 use Apigee\Mint\Organization as Organization;
+use Apigee\Exceptions\ResponseException;
 
 /**
- *
  * Implement callback_submit_form
  *
  * This forms is shown to the user when they select the payment provider.
@@ -176,9 +176,7 @@ function devconnect_mint_payment_submit_form_submit($payment_method, $pane_form,
  * @return array
  */
 function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $payment_method, $address = NULL) {
-
-  $config = devconnect_monetization_default_org_config();
-  $developer_id = _devconnect_monetization_get_developer_id(TRUE);
+  global $user;
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $currency_code = strtolower($order_wrapper->commerce_order_total->currency_code->value());
 
@@ -211,9 +209,22 @@ function devconnect_mint_payment_redirect_form($form, &$form_state, $order, $pay
   $payload = devconnect_mint_payment_build_address_payload($address);
 
   $developer = devconnect_monetization_developer_load();
-  $payment = $developer->createPayment($parameters, $payload);
-  if (!$payment->getSuccess()) {
-    drupal_set_message('Could not create payment order. If problem persists please contact your administrator.', 'warning');
+  try {
+    $payment = $developer->createPayment($parameters, $payload);
+  }
+  catch (ResponseException $exception) {
+    // If this is a white listing error at WorldPay, throw error with
+    // 'emergency' severity so that monetization monitor picks up error.
+    $response = json_decode($exception->getMessage());
+    watchdog('devconnect_mint_payment', "Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription), WATCHDOG_EMERGENCY);
+
+    drupal_set_message(t('The WorldPay payment gateway is currently not available. Please select a different payment system or try again later.'), 'error');
+    // Send the customer to the previous step of the checkout process, Worldpay is not working.
+    commerce_payment_redirect_pane_previous_page($order, t("Could not create payment order: %error_code : %error_description", array('%error_code' => $response->errorCode, '%error_description' => $response->errorDescription)));
+    drupal_goto(commerce_checkout_order_uri($order));
+  }
+  if (is_object($payment) && !$payment->getSuccess()) {
+    drupal_set_message(t('Could not create payment order. If problem persists please contact your administrator.'), 'warning');
     watchdog('devconnect_mint_payment', "Could not create payment order: @message", array('@message' => '<pre>' . print_r($payment, TRUE) . '</pre>'), WATCHDOG_WARNING);
     drupal_goto('<front>');
   }
@@ -373,4 +384,35 @@ function devconnect_mint_payment_purchase_plan($order) {
 
 function devconnect_mint_payment_init() {
   drupal_add_js(drupal_get_path('module', 'devconnect_mint_payment') . '/js/devconnect_mint_payment.js', 'file');
+}
+
+/**
+ * Implements hook_devconnect_monitor_event_info().
+ *
+ * Implementations return an associative array whose keys define
+ * the unique alert name and whose values are an associative array of
+ * properties for each path.  The alert name can be anything you want,
+ * but should be prefixed with your module name to make sure it is
+ * unique, such as "mymodule_overheating" and "mymodule_virusdetected".
+ *
+ * The array contains the following properties:
+ *
+ * description: A description of the alert, this can be anything to help
+ * the end user.
+ *
+ * log_type: The watchdog type to match against when deciding to
+ * sent out an alert.
+ *
+ * log_severity: The watchdog severity to match against when deciding to
+ * sent out an alert.
+ *
+ */
+function devconnect_mint_payment_devconnect_monitor_event_info() {
+  return array(
+    'mint_critical' => array(
+      'description' => t('Monetization payment errors.'),
+      'log_type' => 'devconnect_mint_payment',
+      'log_severity' => WATCHDOG_EMERGENCY,
+    ),
+  );
 }

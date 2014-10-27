@@ -273,3 +273,31 @@ function devconnect_developer_apps_update_7428() {
   drupal_uninstall_schema('devconnect_developer_apps');
   drupal_install_schema('devconnect_developer_apps');
 }
+
+/**
+ * Implements hook_requirements().
+ *
+ * @param string $phase
+ * @return array
+ */
+function devconnect_developer_apps_requirements($phase) {
+  $requirements = array();
+  if ($phase != 'runtime' || !array_key_exists('PANTHEON_ENVIRONMENT', $_SERVER) || $_SERVER['PANTHEON_ENVIRONMENT'] != 'live') {
+    return $requirements;
+  }
+  if (variable_get('devconnect_api_product_cache_enable', 1)) {
+    $requirements['api-product-cache'] = array(
+      'severity' => REQUIREMENT_OK,
+      'value' => t('The API Product cache is enabled.'),
+      'title' => t('API Product caching')
+    );
+  }
+  else {
+    $requirements['api-product-cache'] = array(
+      'severity' => REQUIREMENT_WARNING,
+      'value' => t('The API Product cache is disabled. In a production environment, this degrades performance.'),
+      'title' => t('API Product caching')
+    );
+  }
+  return $requirements;
+}

@@ -44,6 +44,7 @@ function uuid_node_features_export($data, &$export, $module_name = '') {
   foreach ($nids as $uuid => $nid) {
     // Load the existing node, with a fresh cache.
     $node = node_load($nid, NULL, TRUE);
+    entity_make_entity_universal('node', array($node));
 
     $export['features']['uuid_node'][$uuid] = $uuid;
     $pipe['node'][$node->type] = $node->type;
@@ -72,6 +73,8 @@ function uuid_node_features_export_render($module, $data) {
   $code[] = '  $nodes = array();';
   $code[] = '';
   $nids = entity_get_id_by_uuid('node', $data);
+  // Always sort by the uuid to ensure the order is maintained.
+  ksort($nids);
   foreach ($nids as $uuid => $nid) {
     // Only export the node if it exists.
     if ($nid === FALSE) {
@@ -136,10 +139,16 @@ function uuid_node_features_revert($module) {
  */
 function uuid_node_features_rebuild($module) {
   $return = TRUE;
-  // Import the terms first.
-  uuid_term_features_rebuild($module);
 
-  $nodes = module_invoke($module, 'uuid_features_default_content');
+  variable_set('menu_rebuild_needed', FALSE);
+  lock_acquire('menu_rebuild');
+
+  if (function_exists('uuid_term_features_rebuild')) {
+    // Import the terms first.
+    uuid_term_features_rebuild($module);
+  }
+
+  $nodes = features_get_default('uuid_node', $module);
   if (!empty($nodes)) {
     module_load_include('inc', 'node', 'node.pages');
 
@@ -209,7 +218,7 @@ function uuid_node_features_rebuild_nodes($nodes, $module, $max_nesting = 5, $ne
 
       $node = node_submit($node);
       uuid_features_file_field_import($node, 'node');
-      node_save($node);
+      entity_uuid_save('node', $node);
     }
     catch (Exception $e) {
       $second_run_nodes[] = $data;
@@ -218,5 +227,7 @@ function uuid_node_features_rebuild_nodes($nodes, $module, $max_nesting = 5, $ne
   if (!empty($second_run_nodes)) {
     return uuid_node_features_rebuild_nodes($second_run_nodes, $module, $max_nesting, ++$nesting_level);
   }
+  lock_release('menu_rebuild');
+  variable_set('menu_rebuild_needed', TRUE);
   return TRUE;
 }

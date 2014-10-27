@@ -506,7 +506,7 @@
       wrapError(this, options);
 
       method = this.isNew() ? 'create' : (options.patch ? 'patch' : 'update');
-      if (method === 'patch') options.attrs = attrs;
+      if (method === 'patch' && !options.attrs) options.attrs = attrs;
       xhr = this.sync(method, this, options);
 
       // Restore attributes.
@@ -524,6 +524,7 @@
       var success = options.success;
 
       var destroy = function() {
+        model.stopListening();
         model.trigger('destroy', model, model.collection, options);
       };
 
@@ -591,7 +592,7 @@
   });
 
   // Underscore methods that we want to implement on the Model.
-  var modelMethods = ['keys', 'values', 'pairs', 'invert', 'pick', 'omit', 'chain'];
+  var modelMethods = ['keys', 'values', 'pairs', 'invert', 'pick', 'omit', 'chain', 'isEmpty'];
 
   // Mix in each Underscore method as a proxy to `Model#attributes`.
   _.each(modelMethods, function(method) {
@@ -759,8 +760,10 @@
 
       // Unless silenced, it's time to fire all appropriate add/sort events.
       if (!options.silent) {
+        var addOpts = at != null ? _.clone(options) : options;
         for (var i = 0, length = toAdd.length; i < length; i++) {
-          (model = toAdd[i]).trigger('add', model, this, options);
+          if (at != null) addOpts.index = at + i;
+          (model = toAdd[i]).trigger('add', model, this, addOpts);
         }
         if (sort || (order && order.length)) this.trigger('sort', this, options);
       }
@@ -774,7 +777,7 @@
     // any granular `add` or `remove` events. Fires `reset` when finished.
     // Useful for bulk operations and optimizations.
     reset: function(models, options) {
-      options || (options = {});
+      options = options ? _.clone(options) : {};
       for (var i = 0, length = this.models.length; i < length; i++) {
         this._removeReference(this.models[i], options);
       }
@@ -823,6 +826,7 @@
 
     // Get the model at the given index.
     at: function(index) {
+      if (index < 0) index += this.length;
       return this.models[index];
     },
 
@@ -1093,10 +1097,10 @@
     },
 
     // Creates the `this.el` and `this.$el` references for this view using the
-    // given `el` and a hash of `attributes`. `el` can be a CSS selector or an
-    // HTML string, a jQuery context or an element. Subclasses can override
-    // this to utilize an alternative DOM manipulation API and are only required
-    // to set the `this.el` property.
+    // given `el`. `el` can be a CSS selector or an HTML string, a jQuery
+    // context or an element. Subclasses can override this to utilize an
+    // alternative DOM manipulation API and are only required to set the
+    // `this.el` property.
     _setElement: function(el) {
       this.$el = el instanceof Backbone.$ ? el : Backbone.$(el);
       this.el = this.$el[0];
@@ -1414,7 +1418,14 @@
     // Are we at the app root?
     atRoot: function() {
       var path = this.location.pathname.replace(/[^\/]$/, '$&/');
-      return path === this.root && !this.location.search;
+      return path === this.root && !this.getSearch();
+    },
+
+    // In IE6, the hash fragment and search params are incorrect if the
+    // fragment contains `?`.
+    getSearch: function() {
+      var match = this.location.href.replace(/#.*/, '').match(/\?.+/);
+      return match ? match[0] : '';
     },
 
     // Gets the true hash value. Cannot use location.hash directly due to bug
@@ -1426,7 +1437,7 @@
 
     // Get the pathname and search params, without the root.
     getPath: function() {
-      var path = decodeURI(this.location.pathname + this.location.search);
+      var path = decodeURI(this.location.pathname + this.getSearch());
       var root = this.root.slice(0, -1);
       if (!path.indexOf(root)) path = path.slice(root.length);
       return path.slice(1);
@@ -1447,7 +1458,7 @@
     // Start the hash change handling, returning `true` if the current URL matches
     // an existing route, and `false` otherwise.
     start: function(options) {
-      if (History.started) throw new Error("Backbone.history has already been started");
+      if (History.started) throw new Error('Backbone.history has already been started');
       History.started = true;
 
       // Figure out the initial configuration. Do we need an iframe?

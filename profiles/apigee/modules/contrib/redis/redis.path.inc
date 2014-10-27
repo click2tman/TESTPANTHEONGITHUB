@@ -161,7 +161,7 @@ function drupal_lookup_path($action, $path = '', $path_language = NULL) {
         if ($path_language == LANGUAGE_NONE) {
           list ($ret, $path_language) = db_query("SELECT source, language FROM {url_alias} WHERE alias = :alias AND language = :language ORDER BY pid DESC LIMIT 1", array(
             ':alias' => $path,
-            ':language' => array($path_language, LANGUAGE_NONE),
+            ':language' => LANGUAGE_NONE,
           ))->fetch(PDO::FETCH_NUM);
         } else if ($path_language > LANGUAGE_NONE) {
           list ($ret, $path_language) = db_query("SELECT source, language FROM {url_alias} WHERE alias = :alias AND language IN (:language) ORDER BY language DESC, pid DESC LIMIT 1", array(
@@ -442,7 +442,7 @@ function path_save(&$path) {
     drupal_write_record('url_alias', $path, array('pid'));
     module_invoke_all('path_update', $path);
   }
-  if ($path['original']) {
+  if (!empty($path['original'])) {
     redis_path_backend_get()->deleteAlias($path['original']['source'], $path['original']['alias'], $path['original']['language']);
   }
   redis_path_backend_get()->saveAlias($path['source'], $path['alias'], $path['language']);

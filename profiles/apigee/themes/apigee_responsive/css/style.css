@@ -41,6 +41,10 @@ body.navbar-administration.logged-in #navbar.navbar-fixed-top {
     position:static;
 }
 
+body.navbar-is-fixed-top.logo_bigger{
+    padding-top: 75px!important;
+}
+
 a:hover,
 a {
     -moz-outline-style: none;
@@ -64,6 +68,10 @@ body.admin-menu.navbar-is-fixed-top {
     padding-top:70px !important;
 }
 
+body.navbar-is-fixed-top.admin-menu.logo_bigger{
+    padding-top: 75px!important;
+}
+
 .page-content {
     background: none repeat scroll 0 0 #FFFFFF;
     padding: 40px 0 80px;
@@ -75,21 +83,13 @@ body.admin-menu.navbar-is-fixed-top {
 
 .navbar-nav > li.expanded.active,
 .navbar-nav > li:hover {
-    background-color: #E02E01;
     cursor:pointer;
 }
 
 .navbar-nav > li > span {
     padding: 18px 15px 18px 15px;
     line-height: 50px;
-    color: #FFFFFF;
     text-decoration: none;
-}
-
-.navbar-nav > li > span > span.caret {
-    border-bottom-color: #FFFFFF;
-    border-top-color: #FFFFFF;
-    color: #FFFFFF;
 }
 
 .navbar.navbar-nav > .active > a,
@@ -112,11 +112,11 @@ td.forum-number-topics, td.forum-number-posts {
     text-align:left;
 }
 
-body.html .btn:hover,
-body.html .btn:focus,
-body.html .btn:active,
-body.html .btn.active,
-body.html .open .dropdown-toggle.btn {
+body .btn:hover,
+body .btn:focus,
+body .btn:active,
+body .btn.active,
+body .open .dropdown-toggle.btn {
     background-color: #0197C6;
     background-image: -moz-linear-gradient(center top , #0197C6, #016F91);
     background-repeat: repeat-x;
@@ -938,6 +938,20 @@ a.author-pane-link:visited {
     background-color: #D9534F;
 }
 
+.keyword-label{
+    font-size: 100%;
+    float: left;
+    margin: 2px;
+}
+
+.node-type-article .field-name-field-keywords{
+    margin: 0 0 20px;
+    float: left;
+    clear: both;
+    width: 100%;
+
+}
+
 
 /* Responsiveness */
 /**
@@ -947,7 +961,7 @@ a.author-pane-link:visited {
 
     /*
 Analytics styles
-*/
+    */
     #devconnect-developer-apps-analytics-form #edit-metric,
     #devconnect-developer-apps-analytics-form #edit-date-from,
     #devconnect-developer-apps-analytics-form #edit-date-to {
@@ -1241,7 +1255,7 @@ Analytics styles
     }
     /*
 Analytics styles
-*/
+    */
     #devconnect-developer-apps-analytics-form #edit-metric,
     #devconnect-developer-apps-analytics-form #edit-date-from,
     #devconnect-developer-apps-analytics-form #edit-date-to {

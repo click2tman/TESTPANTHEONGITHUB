@@ -73,6 +73,10 @@ class WatchdogLogger extends \Psr\Log\AbstractLogger
                 $message = ob_get_clean();
             }
         }
+	
+        if(count($context) > 0) {
+            $message = $this->interpolate($message, $context);
+        }
 
         // Find the "type" (source) of the log request. Generally this is a class
         // or file name. It may be specified in $context, or it can be derived from
@@ -93,6 +97,8 @@ class WatchdogLogger extends \Psr\Log\AbstractLogger
             $type = basename($backtrace[1]['file']);
             $type = preg_replace('!\.(module|php)$!', '', $type);
         }
+
+        $message = preg_replace("!Authorization: Basic [A-Za-z0-9+\\=]+!", 'Authorization: Basic [**masked**]', $message);
 
         if ($use_watchdog_exception) {
             watchdog_exception($type, $message, null, array(), $severity);
@@ -140,4 +146,27 @@ class WatchdogLogger extends \Psr\Log\AbstractLogger
         }
         return $level;
     }
+
+  /**
+   * Interpolates context values into the message placeholders.
+   */
+  private function interpolate($message, array $context = array())
+  {
+      // build a replacement array with braces around the context keys
+      $replace = array();
+      foreach ($context as $key => $val) {
+          if (!is_scalar($val)) {
+              if (is_object($val) && method_exists($val, '__toString')) {
+                  $val = $val->__toString();
+              }
+              else {
+                  $val = print_r($val, TRUE);
+              }
+          }
+          $replace['{' . $key . '}'] = $val;
+    }
+
+    // interpolate replacement values into the message and return
+    return strtr($message, $replace);
+  }
 }

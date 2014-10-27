@@ -1,6 +1,0 @@
-/devconnect_downloads/.DS_Store
-*.DS_Store*
-*vendor*
-.idea/*
-composer.lock
-/tests/bin/

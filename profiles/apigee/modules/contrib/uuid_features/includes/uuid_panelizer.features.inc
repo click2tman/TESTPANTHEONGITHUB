@@ -47,9 +47,13 @@ function uuid_panelizer_features_export($data, &$export, $module_name = '') {
   $export['dependencies']['panelizer'] = 'panelizer';
 
   foreach ($data as $key) {
-    list($entity_type, $entity_uuid, $view_mode) = explode(':', $key);
+    $exploded_key = explode(':', $key);
+    if (count($exploded_key) < 3) {
+      continue;
+    }
+    list($entity_type, $entity_uuid, $view_mode) = $exploded_key;
 
-    $entity = entity_uuid_load($entity_type, array($entity_uuid));
+    $entity = entity_uuid_load($entity_type, array($entity_uuid), array(), TRUE);
     $entity = reset($entity);
 
     // Only export the display if the related entity exists and its a modified
@@ -78,7 +82,6 @@ function uuid_panelizer_features_export($data, &$export, $module_name = '') {
     drupal_alter('uuid_panelizer_features_export', $data, $panelizer_settings, $module_name);
     unset($data['__drupal_alter_by_ref']);
   }
-
   return $pipe;
 }
 
@@ -92,9 +95,13 @@ function uuid_panelizer_features_export_render($module, $data) {
   $code[] = '';
 
   foreach ($data as $key) {
-    list($entity_type, $entity_uuid, $view_mode) = explode(':', $key);
+    $exploded_key = explode(':', $key);
+    if (count($exploded_key) < 3) {
+      continue;
+    }
+    list($entity_type, $entity_uuid, $view_mode) = $exploded_key;
 
-    $entity = entity_uuid_load($entity_type, array($entity_uuid));
+    $entity = entity_uuid_load($entity_type, array($entity_uuid), array(), TRUE);
     $entity = reset($entity);
 
     // Only export the display if the related entity exists and its a modified
@@ -136,7 +143,7 @@ function uuid_panelizer_features_revert($module) {
  * Rebuilds users based on UUID from code defaults.
  */
 function uuid_panelizer_features_rebuild($module) {
-  $panelizer_entity_displays = module_invoke($module, 'uuid_features_default_panelizer');
+  $panelizer_entity_displays = features_get_default('uuid_panelizer', $module);
 
   if (!empty($panelizer_entity_displays)) {
     foreach ($panelizer_entity_displays as $display) {

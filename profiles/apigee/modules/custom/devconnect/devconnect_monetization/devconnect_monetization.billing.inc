@@ -1,9 +1,15 @@
 <?php
 
+/**
+ * @file
+ * Billing methods.
+ */
+
 use Apigee\Mint\Types\BillingDocumentType;
 use Apigee\Mint\BillingDocument;
 use Apigee\Mint\Exceptions\MintApiException;
 use Apigee\Mint\Organization;
+use Apigee\Mint\DeveloperBalance;
 
 /**
  * Page callback for:
@@ -16,6 +22,9 @@ use Apigee\Mint\Organization;
  */
 function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $developer) {
   $config = devconnect_monetization_default_org_config();
+  $organization = new Organization($config);
+  $currencies = $organization->listSupportedCurrencies();
+
   $access_prepaid_reports = user_access('access mint prepaid reports');
   if ($access_prepaid_reports) {
     $top_up_balance_perm = user_access('top up mint balance');
@@ -24,10 +33,18 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
       $top_up_form = drupal_render($form);
     }
     $download_prepaid_report_perm = user_access('download mint prepaid report');
-    $organization = new Organization($config);
-    $currencies = $organization->listSupportedCurrencies();
-    $previous_prepaid_statements_form = drupal_get_form('devconnect_monetization_download_prepaid_report_form');
-    $balances = $developer->getPrepaidBalance();
+    if ($download_prepaid_report_perm) {
+      $previous_prepaid_statements_form = drupal_get_form('devconnect_monetization_download_prepaid_report_form');
+    }
+    // Decide what API call to use to get the report data for Billing and
+    // Reports page.
+    if (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) {
+      $balances = $developer->getPrepaidBalance();
+    }
+    else {
+      $developer_balance = new DeveloperBalance($developer->getEmail(), $config);
+      $balances = $developer_balance->getList();
+    }
     $topped_up_currencies = 0;
     foreach ($balances as $balance) {
       foreach ($currencies as $currency) {
@@ -36,6 +53,9 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
           break;
         }
       }
+      // Calculate the Current Balance from Total - Usage
+      if (! (variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL) == BILLING_AND_REPORTS_USE_PREPAID_API_CALL) )
+        $balance->setAmount($balance->getAmount() - $balance->getUsage());
     }
   }
   else {
@@ -54,6 +74,7 @@ function devconnect_monetization_prepaid_balance(\Apigee\Mint\Developer $develop
     'previous_prepaid_statements_form' => drupal_render($previous_prepaid_statements_form),
     'can_top_up_another_currency' => $topped_up_currencies < count($currencies),
     'download_prepaid_report_perm' => $download_prepaid_report_perm,
+    'balance_report_type' => variable_get('devconnect_monetization_balance_report_type', BILLING_AND_REPORTS_USE_PREPAID_API_CALL),
   );
   drupal_add_js(drupal_get_path('module', 'devconnect_monetization') . '/js/global.js', 'file');
   return theme('devconnect_monetization_billing_prepaid_balance', $variables);
@@ -201,7 +222,7 @@ function devconnect_monetization_top_up_balance_form_submit($form, &$form_state)
     $values = array(
       'currency_id' => $form_state['values']['currency_id'],
       'amount' => $form_state['values']['top_up_amount'],
-      'notes' => $form_state['values']['notes'],
+      'notes' => (isset($form_state['values']['notes'])) ? $form_state['values']['notes'] : '',
     );
 
     $deposit_order = devconnect_monetization_start_payment_order($user, $values);
@@ -715,7 +736,7 @@ function devconnect_monetization_billing_document_form_submit(&$form, &$form_sta
       try {
         $billing_docs = $billing_document->searchBillingDoc($form_state['values']['search-billing-doc'], $developer_id);
       } catch (MintApiException $re) {
-        drupal_set_message($re->getMintMessage(TRUE, TRUE), 'warning');
+        drupal_set_message(t("Error: %error", array('%error' => $re->getMintMessage(TRUE, TRUE))), 'warning');
         return;
       }
     }

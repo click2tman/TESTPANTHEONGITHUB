@@ -146,7 +146,7 @@
         -ms-box-shadow: inset 0 1px 10px 1px #5c8bee, 0 1px 0 #1d2c4d, 0 2px 0 #1f3053, 0 4px 3px 0 #111111;
         -o-box-shadow: inset 0 1px 10px 1px #5c8bee, 0 1px 0 #1d2c4d, 0 2px 0 #1f3053, 0 4px 3px 0 #111111;
         box-shadow: inset 0 1px 10px 1px #5c8bee, 0 1px 0 #1d2c4d, 0 2px 0 #1f3053, 0 4px 3px 0 #111111;
-        margin-top: 5px; margin-bottom: 10px }
+        margin-top: 5px; margin-bottom: 10px; }
     a img {
       border: 0;
     }
@@ -1194,7 +1194,7 @@ alert("Dessert will be " + (new Meal).get('dessert'));
       serialization, or for augmentation before being sent to the server. The
       name of this method is a bit confusing, as it doesn't actually return a
       JSON string &mdash; but I'm afraid that it's the way that the
-      <a href="https://developer.mozilla.org/en/JSON#toJSON()_method">JavaScript API for <b>JSON.stringify</b></a>
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#toJSON_behavior">JavaScript API for <b>JSON.stringify</b></a>
       works.
     </p>
 
@@ -1633,7 +1633,8 @@ var Library = Backbone.Collection.extend({
       comparator option will prevent sorting. If you define an
       <b>initialize</b> function, it will be invoked when the collection is
       created. There are a couple of options that, if provided, are attached to
-      the collection directly: <tt>model</tt> and <tt>comparator</tt>.
+      the collection directly: <tt>model</tt> and <tt>comparator</tt>.<br />
+      Pass <tt>null</tt> for <tt>models</tt> to create an empty Collection with <tt>options</tt>.
     </p>
 
 <pre>
@@ -1660,7 +1661,7 @@ var spaces = new Backbone.Collection([], {
       collection. This can be used to serialize and persist the
       collection as a whole. The name of this method is a bit confusing, because
       it conforms to
-      <a href="https://developer.mozilla.org/en/JSON#toJSON()_method">JavaScript's JSON API</a>.
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#toJSON_behavior">JavaScript's JSON API</a>.
     </p>
 
 <pre class="runnable">
@@ -1791,7 +1792,8 @@ ships.add([
       of models (or attribute hashes), triggering a single <tt>"reset"</tt> event
       at the end. Returns the newly-set models.
       For convenience, within a <tt>"reset"</tt> event, the list of any
-      previous models is available as <tt>options.previousModels</tt>.
+      previous models is available as <tt>options.previousModels</tt>.<br />
+      Pass <tt>null</tt> for <tt>models</tt> to empty your Collection with <tt>options</tt>.
     </p>
 
     <p>
@@ -1887,7 +1889,7 @@ var book = library.get(110);
       <br />
       Return a shallow copy of this collection's models, using the same options as
       native
-      <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/slice">Array#slice</a>.
+      <a href="https://developer.mozilla.org/JavaScript/Reference/Global_Objects/Array/slice">Array#slice</a>.
     </p>
 
     <p id="Collection-length">
@@ -1908,7 +1910,7 @@ var book = library.get(110);
       <a href="http://underscorejs.org/#sortBy">sortBy</a>
       (pass a function that takes a single argument),
       as a
-      <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/sort">sort</a>
+      <a href="https://developer.mozilla.org/JavaScript/Reference/Global_Objects/Array/sort">sort</a>
       (pass a comparator function that expects two arguments),
       or as a string indicating the attribute to sort by.
     </p>
@@ -2454,6 +2456,7 @@ $(function(){
       <li><b>create &rarr; POST &nbsp; </b><tt>/collection</tt></li>
       <li><b>read &rarr; GET &nbsp; </b><tt>/collection[/id]</tt></li>
       <li><b>update &rarr; PUT &nbsp; </b><tt>/collection/id</tt></li>
+      <li><b>patch &rarr; PATCH &nbsp; </b><tt>/collection/id</tt></li>
       <li><b>delete &rarr; DELETE &nbsp; </b><tt>/collection/id</tt></li>
     </ul>
 
@@ -2489,7 +2492,7 @@ end
       <br />
       If you want to work with a legacy web server that doesn't support Backbone's
       default REST/HTTP approach, you may choose to turn on <tt>Backbone.emulateHTTP</tt>.
-      Setting this option will fake <tt>PUT</tt> and <tt>DELETE</tt> requests with
+      Setting this option will fake <tt>PUT</tt>, <tt>PATCH</tt> and <tt>DELETE</tt> requests with
       a HTTP <tt>POST</tt>, setting the <tt>X-HTTP-Method-Override</tt> header
       with the true method. If <tt>emulateJSON</tt> is also on, the true method
       will be passed as an additional <tt>_method</tt> parameter.
@@ -2827,8 +2830,13 @@ var model = localBackbone.Model.extend(...);
       <br />
       If you have multiple copies of <tt>jQuery</tt> on the page, or simply want
       to tell Backbone to use a particular object as its DOM / Ajax library,
-      this is the property for you.
+      this is the property for you. If you're loading Backbone with CommonJS
+      (e.g. node, component, or browserify) you must set this property manually.
     </p>
+    
+<pre>
+var Backbone.$ = require('jquery');
+</pre>
 
     <h2 id="faq">F.A.Q.</h2>
 
@@ -4038,7 +4046,7 @@ ActiveRecord::Base.include_root_in_json = false
 
     <b class="header">1.1.2</b> &mdash; <small><i>Feb. 20, 2014</i></small>
     &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.1.1...1.1.2">Diff</a>
-    &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/1.1.2/index.html">Docs</a>
+    &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.1.2/index.html">Docs</a>
     <br />
     <ul style="margin-top: 5px;">
       <li>
@@ -4052,7 +4060,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">1.1.1</b> &mdash; <small><i>Feb. 13, 2014</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.1.0...1.1.1">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/1.1.1/index.html">Docs</a><br />
+    <b class="header">1.1.1</b> &mdash; <small><i>Feb. 13, 2014</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.1.0...1.1.1">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.1.1/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Backbone now registers itself for AMD (Require.js), Bower and Component,
@@ -4076,7 +4084,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">1.1.0</b> &mdash; <small><i>Oct. 10, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.0.0...1.1.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/1.1.0/index.html">Docs</a><br />
+    <b class="header">1.1.0</b> &mdash; <small><i>Oct. 10, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.0.0...1.1.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.1.0/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Made the return values of Collection's <tt>set</tt>, <tt>add</tt>,
@@ -4108,7 +4116,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">1.0.0</b> &mdash; <small><i>March 20, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.10...1.0.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/1.0.0/index.html">Docs</a><br />
+    <b class="header">1.0.0</b> &mdash; <small><i>March 20, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.10...1.0.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.0.0/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Renamed Collection's "update" to <a href="#Collection-set">set</a>, for
@@ -4142,7 +4150,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">0.9.10</b> &mdash; <small><i>Jan. 15, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.9...0.9.10">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.9.10/index.html">Docs</a><br />
+    <b class="header">0.9.10</b> &mdash; <small><i>Jan. 15, 2013</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.9...0.9.10">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.9.10/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         A <tt>"route"</tt> event is triggered on the router in addition
@@ -4183,7 +4191,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">0.9.9</b> &mdash; <small><i>Dec. 13, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.2...0.9.9">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.9.9/index.html">Docs</a><br />
+    <b class="header">0.9.9</b> &mdash; <small><i>Dec. 13, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.2...0.9.9">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.9.9/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Added <a href="#Events-listenTo">listenTo</a>
@@ -4305,7 +4313,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">0.9.2</b> &mdash; <small><i>March 21, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.1...0.9.2">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.9.2/index.html">Docs</a><br />
+    <b class="header">0.9.2</b> &mdash; <small><i>March 21, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.1...0.9.2">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.9.2/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Instead of throwing an error when adding duplicate models to a collection,
@@ -4347,7 +4355,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">0.9.1</b> &mdash; <small><i>Feb. 2, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.0...0.9.1">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.9.1/index.html">Docs</a><br />
+    <b class="header">0.9.1</b> &mdash; <small><i>Feb. 2, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.9.0...0.9.1">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.9.1/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Reverted to 0.5.3-esque behavior for validating models. Silent changes
@@ -4365,7 +4373,7 @@ ActiveRecord::Base.include_root_in_json = false
       </li>
     </ul>
 
-    <b class="header">0.9.0</b> &mdash; <small><i>Jan. 30, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.3...0.9.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.9.0/index.html">Docs</a><br />
+    <b class="header">0.9.0</b> &mdash; <small><i>Jan. 30, 2012</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.3...0.9.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.9.0/index.html">Docs</a><br />
     <ul style="margin-top: 5px;">
       <li>
         Creating and destroying models with <tt>create</tt> and <tt>destroy</tt>
@@ -4404,7 +4412,7 @@ ActiveRecord::Base.include_root_in_json = false
         A Backbone collection's <tt>comparator</tt> function may now behave
         either like a <a href="http://underscorejs.org/#sortBy">sortBy</a>
         (pass a function that takes a single argument),
-        or like a <a href="https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/sort">sort</a>
+        or like a <a href="https://developer.mozilla.org/JavaScript/Reference/Global_Objects/Array/sort">sort</a>
         (pass a comparator function that expects two arguments). The comparator
         function is also now bound by default to the collection &mdash; so you
         can refer to <tt>this</tt> within it.
@@ -4463,7 +4471,7 @@ ActiveRecord::Base.include_root_in_json = false
     </ul>
 
     <p>
-      <b class="header">0.5.3</b> &mdash; <small><i>August 9, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.2...0.5.3">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.5.3/index.html">Docs</a><br />
+      <b class="header">0.5.3</b> &mdash; <small><i>August 9, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.2...0.5.3">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.5.3/index.html">Docs</a><br />
       A View's <tt>events</tt> property may now be defined as a function, as well
       as an object literal, making it easier to programmatically define and inherit
       events. <tt>groupBy</tt> is now proxied from Underscore as a method on Collections.
@@ -4473,7 +4481,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.5.2</b> &mdash; <small><i>July 26, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.1...0.5.2">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.5.2/index.html">Docs</a><br />
+      <b class="header">0.5.2</b> &mdash; <small><i>July 26, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.1...0.5.2">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.5.2/index.html">Docs</a><br />
       The <tt>bind</tt> function, can now take an optional third argument, to specify
       the <tt>this</tt> of the callback function.
       Multiple models with the same <tt>id</tt> are now allowed in a collection.
@@ -4484,7 +4492,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.5.1</b> &mdash; <small><i>July 5, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.0...0.5.1">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.5.1/index.html">Docs</a><br />
+      <b class="header">0.5.1</b> &mdash; <small><i>July 5, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.5.0...0.5.1">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.5.1/index.html">Docs</a><br />
       Cleanups from the 0.5.0 release, to wit: improved transparent upgrades from
       hash-based URLs to pushState, and vice-versa. Fixed inconsistency with
       non-modified attributes being passed to <tt>Model#initialize</tt>. Reverted
@@ -4493,7 +4501,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.5.0</b> &mdash; <small><i>July 1, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.3...0.5.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.5.0/index.html">Docs</a><br />
+      <b class="header">0.5.0</b> &mdash; <small><i>July 1, 2011</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.3...0.5.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.5.0/index.html">Docs</a><br />
       A large number of tiny tweaks and micro bugfixes, best viewed by looking
       at <a href="https://github.com/jashkenas/backbone/compare/0.3.3...0.5.0">the commit diff</a>.
       HTML5 <tt>pushState</tt> support, enabled by opting-in with:
@@ -4517,7 +4525,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.3.3</b> &mdash; <small><i>Dec 1, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.2...0.3.3">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.3.3/index.html">Docs</a><br />
+      <b class="header">0.3.3</b> &mdash; <small><i>Dec 1, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.2...0.3.3">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.3.3/index.html">Docs</a><br />
       Backbone.js now supports <a href="http://zeptojs.com">Zepto</a>, alongside
       jQuery, as a framework for DOM manipulation and Ajax support.
       Implemented <a href="#Model-escape">Model#escape</a>, to efficiently handle
@@ -4528,7 +4536,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.3.2</b> &mdash; <small><i>Nov 23, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.1...0.3.2">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.3.2/index.html">Docs</a><br />
+      <b class="header">0.3.2</b> &mdash; <small><i>Nov 23, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.1...0.3.2">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.3.2/index.html">Docs</a><br />
       Bugfix for IE7 + iframe-based "hashchange" events. <tt>sync</tt> may now be
       overridden on a per-model, or per-collection basis. Fixed recursion error
       when calling <tt>save</tt> with no changed attributes, within a
@@ -4536,7 +4544,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.3.1</b> &mdash; <small><i>Nov 15, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.0...0.3.1">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.3.1/index.html">Docs</a><br />
+      <b class="header">0.3.1</b> &mdash; <small><i>Nov 15, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.3.0...0.3.1">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.3.1/index.html">Docs</a><br />
       All <tt>"add"</tt> and <tt>"remove"</tt> events are now sent through the
       model, so that views can listen for them without having to know about the
       collection. Added a <tt>remove</tt> method to <a href="#View">Backbone.View</a>.
@@ -4545,7 +4553,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.3.0</b> &mdash; <small><i>Nov 9, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.2.0...0.3.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.3.0/index.html">Docs</a><br />
+      <b class="header">0.3.0</b> &mdash; <small><i>Nov 9, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.2.0...0.3.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.3.0/index.html">Docs</a><br />
       Backbone now has <a href="#Controller">Controllers</a> and
       <a href="#History">History</a>, for doing client-side routing based on
       URL fragments.
@@ -4559,7 +4567,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.2.0</b> &mdash; <small><i>Oct 25, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.2...0.2.0">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.2.0/index.html">Docs</a><br />
+      <b class="header">0.2.0</b> &mdash; <small><i>Oct 25, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.2...0.2.0">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.2.0/index.html">Docs</a><br />
       Instead of requiring server responses to be namespaced under a <tt>model</tt>
       key, now you can define your own <a href="#Model-parse">parse</a> method
       to convert responses into attributes for Models and Collections.
@@ -4571,7 +4579,7 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.1.2</b> &mdash; <small><i>Oct 19, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.1...0.1.2">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.1.2/index.html">Docs</a><br />
+      <b class="header">0.1.2</b> &mdash; <small><i>Oct 19, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.1...0.1.2">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.1.2/index.html">Docs</a><br />
       Added a <a href="#Model-fetch">Model#fetch</a> method for refreshing the
       attributes of single model from the server.
       An <tt>error</tt> callback may now be passed to <tt>set</tt> and <tt>save</tt>
@@ -4585,13 +4593,13 @@ ActiveRecord::Base.include_root_in_json = false
     </p>
 
     <p>
-      <b class="header">0.1.1</b> &mdash; <small><i>Oct 14, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.0...0.1.1">Diff</a> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.1.1/index.html">Docs</a><br />
+      <b class="header">0.1.1</b> &mdash; <small><i>Oct 14, 2010</i></small> &mdash; <a href="https://github.com/jashkenas/backbone/compare/0.1.0...0.1.1">Diff</a> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.1.1/index.html">Docs</a><br />
       Added a convention for <tt>initialize</tt> functions to be called
       upon instance construction, if defined. Documentation tweaks.
     </p>
 
     <p>
-      <b class="header">0.1.0</b> &mdash; <small><i>Oct 13, 2010</i></small> &mdash; <a href="http://htmlpreview.github.com/?https://raw.github.com/jashkenas/backbone/0.1.0/index.html">Docs</a><br />
+      <b class="header">0.1.0</b> &mdash; <small><i>Oct 13, 2010</i></small> &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/0.1.0/index.html">Docs</a><br />
       Initial Backbone release.
     </p>
 

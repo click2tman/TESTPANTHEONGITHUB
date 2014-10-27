@@ -10,20 +10,20 @@
  *   $previous_prepaid_statements_form Form to search previous prepaid statements
  */
 ?>
-  <h3>Current Prepaid Balance</h3>
+  <h3><?php print t('Current Prepaid Balance'); ?></h3>
   <hr>
   <div class="table-responsive">
     <table class="table table-bordered">
       <thead>
       <tr>
-        <th>Account Currency</th>
-        <th>Balance Brought Forward</th>
-        <th>Top Ups</th>
-        <th>Usage</th>
-        <th>Tax</th>
-        <th>Current Balance</th>
+        <th><?php print t('Account Currency'); ?></th>
+        <th><?php print t('Balance Brought Forward'); ?></th>
+        <th><?php print t('Top Ups'); ?></th>
+        <th><?php print t('Usage'); ?></th>
+        <th><?php print t('Tax'); ?></th>
+        <th><?php print t('Current Balance'); ?></th>
         <?php if ($top_up_balance_perm) : ?>
-          <th>Actions</th>
+          <th><?php print t('Actions'); ?></th>
         <?php endif; ?>
       </tr>
       </thead>
@@ -32,12 +32,19 @@
         <?php foreach ($balances as $balance) : ?>
           <tr>
             <td><?php print $balance->getSupportedCurrency()->getName(); ?></td>
-            <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
-            <td><?php print commerce_currency_format($balance->getTopups(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
-            <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
-            <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
-            <td>
-              <?php print  commerce_currency_format($balance->getCurrentBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+              <?php if ($balance_report_type == BILLING_AND_REPORTS_USE_PREPAID_API_CALL): ?>
+                <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getTopups(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+                <td><?php print commerce_currency_format($balance->getCurrentBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+              <?php else: ?>
+                <td><?php print commerce_currency_format($balance->getPreviousBalance(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getTransaction()->getRate(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getUsage(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getTax(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?></td>
+                <td><?php print commerce_currency_format($balance->getAmount(), $balance->getSupportedCurrency()->getName(), NULL, FALSE); ?>
+              <?php endif; ?>
               <?php if ($download_prepaid_report_perm) : ?>&nbsp;&nbsp;
                 <?php print l(t('Balance Detail (CSV)'), 'users/me/monetization/billing/report/download-prepaid-report/' . rawurlencode($balance->getSupportedCurrency()->getName()) . '/' . rawurlencode(date('F-Y', time())), array('attributes' => array('style' => 'float:right'))); ?>
               <?php endif; ?>
@@ -47,7 +54,7 @@
                 <td>
                   <a class="top-up trigger btn" balance-id="<?php print $balance->getId(); ?>"
                      current-balance="<?php print $balance->getCurrentBalance(); ?>"
-                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button">Top Up Balance</a>
+                     currency="<?php print $balance->getSupportedCurrency()->getName(); ?>" role="button"><?php print t('Top Up Balance'); ?></a>
                 </td>
               <?php else: ?>
                 <td>&nbsp;</td>
@@ -65,7 +72,7 @@
           <td>--</td>
           <td>--</td>
           <?php if ($top_up_balance_perm) : ?>
-            <td><a class="top-up trigger btn" role="button">Top Up Balance</a></td>
+            <td><a class="top-up trigger btn" role="button"><?php print t('Top Up Balance'); ?></a></td>
           <?php endif; ?>
         </tr>
       <?php endif; ?>
@@ -74,7 +81,7 @@
   </div>
 <?php if ($download_prepaid_report_perm) : ?>
   <div class="spacer">
-    <h3>Previous Prepaid Statements</h3>
+    <h3><?php print t('Previous Prepaid Statements'); ?></h3>
     <hr>
     <?php print $previous_prepaid_statements_form; ?>
   </div>
