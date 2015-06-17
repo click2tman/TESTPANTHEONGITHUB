@@ -4,6 +4,8 @@
  * @file
  * Reads/Writes to and from the Apigee DocGen modeling API
  *
+ * This class is deprecated. Please use Apigee\SmartDocs\Revision instead.
+ *
  * @author bhasselbeck
  */
 
@@ -12,7 +14,12 @@ namespace Apigee\DocGen;
 use Apigee\Util\APIObject;
 use Apigee\Util\OrgConfig;
 
-class DocGenRevision extends APIObject implements DocGenRevisionInterface
+/**
+ * Class DocGenRevision
+ * @deprecated
+ * @package Apigee\DocGen
+ */
+class DocGenRevision extends APIObject
 {
 
     /**
@@ -28,91 +35,106 @@ class DocGenRevision extends APIObject implements DocGenRevisionInterface
     /**
      * Gets all of the revisions for a given model.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @return array
      */
     public function getAllRevisions($apiId)
     {
-      $this->get(rawurlencode($apiId) . '/revisions');
-      return $this->responseObj;
+        $this->get(rawurlencode($apiId) . '/revisions');
+        return $this->responseObj;
     }
 
     /**
      * Gets all of the revisions for a given model.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $revId
+     * @return array
      */
     public function getRevision($apiId, $revId)
     {
-      $this->get(rawurlencode($apiId) . '/revisions/' . $revId);
-      return $this->responseObj;
+        $this->get(rawurlencode($apiId) . '/revisions/' . $revId);
+        return $this->responseObj;
     }
 
     /**
-     * Gets all of the revisions for a given model.
+     * Adds an authscheme to a revision.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $rev
+     * @param array $auth
+     * @return array
      */
     public function addAuth($apiId, $rev, $auth)
     {
-      $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes';
-      $this->post($path, $auth, 'application/json; charset=utf-8');
-      return $this->responseObj;
+        $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes';
+        $this->post($path, $auth);
+        return $this->responseObj;
     }
 
     /**
-     * Gets all of the revisions for a given model.
+     * Updates an authscheme in a revision.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $rev
+     * @param array $auth
+     * @return array
      */
     public function updateAuth($apiId, $rev, $auth)
     {
-      $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes';
-      $this->post($path, $auth, 'application/json; charset=utf-8');
-      return $this->responseObj;
+        $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes';
+        $this->post($path, $auth);
+        return $this->responseObj;
     }
 
     /**
-     * Gets all of the revisions for a given model.
+     * Gets OAuth credentials for a revision.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $rev
+     * @return array
      */
     public function getOAuthCredentials($apiId, $rev)
     {
-      try {
-        $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes/oauth2webserverflow';
-        $this->get($path);
-        return array(
-          'code' => (int)$this->responseCode,
-          'data' => $this->responseObj
-        );
-      } catch (\Exception $e) {
-        return $this->responseCode;
-      }
+        try {
+            $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes/oauth2webserverflow';
+            $this->get($path);
+            return array(
+                'code' => (int)$this->responseCode,
+                'data' => $this->responseObj
+            );
+        } catch (\Exception $e) {
+            return $this->responseCode;
+        }
     }
 
     /**
-     * Gets all of the revisions for a given model.
+     * Gets Custom Token credentials for a revision.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $rev
+     * @return array
      */
     public function getTokenCredentials($apiId, $rev)
     {
-      try {
-        $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes/custom';
-        $this->get($path);
-        return array(
-          'code' => (int)$this->responseCode,
-          'data' => $this->responseObj
-        );
-      } catch (\Exception $e) {
-        return $this->responseCode;
-      }
+        try {
+            $path = rawurlencode($apiId) . '/revisions/' . $rev . '/authschemes/custom';
+            $this->get($path);
+            return array(
+                'code' => (int)$this->responseCode,
+                'data' => $this->responseObj
+            );
+        } catch (\Exception $e) {
+            return $this->responseCode;
+        }
     }
 
     /**
-     * Loads a verbose object of a revision.
+     * Loads a revision verbosely.
      *
-     * {@inheritDoc}
+     * @param string $apiId
+     * @param int|string $rev
+     * @return array
      */
     public function loadVerbose($apiId, $revId)
     {
@@ -123,25 +145,25 @@ class DocGenRevision extends APIObject implements DocGenRevisionInterface
     /**
      * Makes a new revision for a given model
      *
-     * @param $apiId
-     * @param $payload
+     * @param string $apiId
+     * @param array $payload
      */
     public function newRevision($apiId, $payload)
     {
-        $this->post(rawurlencode($apiId) . '/revisions', $payload, 'application/json; charset=utf-8');
+        $this->post(rawurlencode($apiId) . '/revisions', $payload);
         return $this->responseObj;
     }
 
     /**
      * Makes a new revision for a given model
      *
-     * @param $apiId
-     * @param $payload
+     * @param string $apiId
+     * @param array $payload
      */
     public function updateRevision($apiId, $revId, $payload)
     {
-      $this->put(rawurlencode($apiId) . '/revisions/' . $revId, $payload, 'application/json; charset=utf-8');
-      return $this->responseObj;
+        $this->put(rawurlencode($apiId) . '/revisions/' . $revId, $payload);
+        return $this->responseObj;
     }
 
 }

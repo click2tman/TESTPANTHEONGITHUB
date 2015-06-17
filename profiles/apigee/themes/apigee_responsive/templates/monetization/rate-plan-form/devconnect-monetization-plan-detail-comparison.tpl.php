@@ -2,7 +2,7 @@
 $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'] : NULL;
 ?>
 <div class="plan-details-comparison">
-  <h3><?php print t('Plan Details & Comparision'); ?></h3>
+  <h3><?php print t('Plan Details & Comparison'); ?></h3>
   <hr>
   <div class="tabbable">
     <ul class="nav nav-tabs">
@@ -19,13 +19,18 @@ $submitted_plan_id = isset($_REQUEST['plan_options']) ? $_REQUEST['plan_options'
     </ul>
     <div class="tab-content plans-comparison">
       <?php foreach ($rate_plans as $rate_plan): ?>
-        <?php list($rate_plan_detail) = $rate_plan->getRatePlanDetails(); ?>
+        <?php
+        $rate_plan_details = $rate_plan->getRatePlanDetails();
+        // The getRatePlanDetails() comes back as an empty array sometimes,
+        // so you need to make sure it is not an empty array before using list()
+        if(!empty($rate_plan_details)){list($rate_plan_detail) = $rate_plan_details;}
+        ?>
         <div id="tab_<?php echo preg_replace('/[^a-z0-9_-]/i', '_', $rate_plan->getId()); ?>" class="tab-pane<?php print $submitted_plan_id ==  $rate_plan->getId() ? ' active' : ''?>">
           <?php // Start Of Future Plan 1 ?>
           <?php if ($rate_plan->getChildRatePlan() != NULL): ?>
 
           <p style="color: #666;">
-            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => substr($rate_plan->getChildRatePlan()->getStartDate(), 0, 10))); ?>
+            <?php print t('This plan has a new version effective @start_date. Toggle below to see the future rate plan.', array('@start_date' => $rate_plan->getChildRatePlan()->getStartDate()->format('m-d-Y'))); ?>
           </p>
           <div class="tabbable">
             <ul class="nav nav-tabs">

@@ -14,15 +14,21 @@ $form = $variables['form'];
 <?php endif; ?>
 <h3><?php print t('Package Name: @package_name', array('@package_name' => $form['#package_name'])); ?></h3>
 <hr>
-
+<div class="row">
 <?php print drupal_render($form['product_list']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['limits']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['price_points']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['comparisons']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render($form['visible_form']); ?>
-
+</div>
+<div class="row">
 <?php print drupal_render_children($form); ?>
+</div>

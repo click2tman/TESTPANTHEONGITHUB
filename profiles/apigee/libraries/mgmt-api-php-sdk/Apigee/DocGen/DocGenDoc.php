@@ -4,6 +4,8 @@
  * @file
  * Reads/Writes to and from the Apigee DocGen modeling API
  *
+ * This class is deprecated. Please use Apigee\SmartDocs\Doc instead.
+ *
  * @author bhasselbeck
  */
 
@@ -12,7 +14,12 @@ namespace Apigee\DocGen;
 use Apigee\Util\APIObject;
 use Apigee\Util\OrgConfig;
 
-class DocGenDoc extends APIObject implements DocGenDocInterface
+/**
+ * Class DocGenDoc
+ * @package Apigee\DocGen
+ * @deprecated
+ */
+class DocGenDoc extends APIObject
 {
 
     /**
@@ -32,15 +39,15 @@ class DocGenDoc extends APIObject implements DocGenDocInterface
      */
     public function requestOperation($data, $mid, $name)
     {
-      if (empty($name)) {
-        $path = $mid . '/revisions/' . $data['revision'] . '/resources/' . $data['resource'] . '/methods/' . $data['operation'];
-        $this->get($path);
-      }
-      else {
-        $path = $mid . '/revisions/' . $data['revision'] . '/resources/' . $data['resource'] . '/methods/' . $data['operation'] . '/doc?template=' . $name;
-        $this->get($path, 'text/html');
-      }
-      return $this->responseText;
+        if (empty($name)) {
+            $path = $mid . '/revisions/' . $data['revision'] . '/resources/' . $data['resource'] . '/methods/' . $data['operation'];
+            $this->get($path);
+        }
+        else {
+            $path = $mid . '/revisions/' . $data['revision'] . '/resources/' . $data['resource'] . '/methods/' . $data['operation'] . '/doc?template=' . $name;
+            $this->get($path, 'text/html');
+        }
+        return $this->responseText;
     }
 
 }

@@ -1,28 +1,17 @@
 name = SmartDocs
 description = Provides integration to Apigee SmartDocs API
-package = devconnect
-version = "7.x-14.08.13"
+package = DevConnect
+version = 7.x-5.1
 core = 7.x
 
-dependencies[] = devconnect
-dependencies[] = entity
-dependencies[] = node
+configure = admin/config/smartdocs
+
+dependencies[] = smartdocs_attachment
+dependencies[] = smartdocs_error
+dependencies[] = smartdocs_parameter
+
 dependencies[] = views
 dependencies[] = taxonomy
 dependencies[] = pathauto
 dependencies[] = ctools
-dependencies[] = views
 
-files[] = controllers/ModelController.php
-files[] = controllers/MethodController.php
-files[] = controllers/ResourceController.php
-files[] = controllers/RevisionController.php
-files[] = controllers/TemplateController.php
-files[] = controllers/DocController.php
-files[] = admin/smartdocs.methods.examples.inc
-files[] = admin/smartdocs.methods.inc
-files[] = admin/smartdocs.models.inc
-files[] = admin/smartdocs.render.inc
-files[] = admin/smartdocs.resources.inc
-files[] = admin/smartdocs.revisions.inc
-files[] = admin/smartdocs.views.inc

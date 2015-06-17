@@ -84,12 +84,13 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
             self::$lastException = $e;
           } catch (ParameterException $e) {
             $dev_app = NULL;
-             self::$lastException = $e;
+            self::$lastException = $e;
           }
         }
         if (isset($dev_app)) {
           try {
             $entity = new DeveloperAppEntity($dev_app->toArray());
+            $entity->orgName = $config->orgName;
             $dev_app->delete();
             devconnect_developer_apps_delete_from_cache($entity);
             $deleted_count++;
@@ -117,9 +118,10 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
   /**
    * Implements EntityAPIControllerInterface::save().
    *
-   * @param $entity
+   * @param Drupal\devconnect_developer_apps\DeveloperAppEntity $entity
    */
   public function save($entity) {
+
     $config = self::getConfig($entity);
     // Make a copy so we can remove irrelevant members
     $entity = (array)$entity;
@@ -129,6 +131,12 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     unset ($entity['apiProductCache']);
     $dev_app->fromArray($entity);
     $dev_app->setApiProductCache($product_cache);
+
+    // If Edge SDK is recent enough, support setting key expiry.
+//    if (method_exists($dev_app, 'setKeyExpiry')) {
+//      $dev_app->setKeyExpiry($entity['keyExpiresIn'] * 86400);
+//    }
+
     try {
       $dev_app->save($is_update);
       $this->appCache[$dev_app->getAppId()] = $dev_app;
@@ -140,7 +148,9 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
     $dev_app_array = $dev_app->toArray();
     // Copy incoming UID to outgoing UID
     $dev_app_array['uid'] = $entity['uid'];
+    $dev_app_array['orgName'] = $config->orgName;
     $last_app = new DeveloperAppEntity($dev_app_array);
+    $last_app->orgName = $config->orgName;
 
     devconnect_developer_apps_write_to_cache($last_app);
 
@@ -265,8 +275,18 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $config->subscribers = array();
       }
 
-      if (array_key_exists('mail', $conditions) && empty($ids)) {
-        $dev_app = new DeveloperApp($config, $conditions['mail']);
+      if (array_key_exists('mail', $conditions)) {
+        $identifier = $conditions['mail'];
+      }
+      elseif (array_key_exists('developerId', $conditions)) {
+        $identifier = $conditions['developerId'];
+      }
+      else {
+        $identifier = NULL;
+      }
+
+      if (isset($identifier) && empty($ids)) {
+        $dev_app = new DeveloperApp($config, $identifier);
         if (array_key_exists('name', $conditions)) {
           try {
             $dev_app->load($conditions['name']);
@@ -349,7 +369,7 @@ class DeveloperAppController implements DrupalEntityControllerInterface, EntityA
         $mail = strtolower($dev_app->getDeveloperMail());
         $array = $dev_app->toArray($include_debug_data);
         $array['orgName'] = $dev_app->getConfig()->orgName;
-        $array['uid'] = (isset($uids[$mail]) ? $uids[$mail] : NULL);
+        $array['uid'] = (array_key_exists($mail, $uids) ? $uids[$mail] : NULL);
         $app_entities[$id] = new DeveloperAppEntity($array);
       }
     }

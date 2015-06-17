@@ -1,11 +1,6 @@
 <?php
 
-if (array_key_exists('HTTP_X_PANTHEON_SCREENSHOT', $_SERVER)) {
-  echo "<!DOCTYPE html><html style='background: url(apigee1.jpg) no-repeat bottom center fixed;-webkit-background-size: cover;-moz-background-size: cover;-o-background-size: cover; background-size: cover;'><html><head></head><body></body></html>";
-  exit();
-}
-
-require_once(DRUPAL_ROOT . '/profiles/apigee/libraries/mgmt-api-php-sdk/Apigee/Util/Crypto.php');
+require_once(DRUPAL_ROOT . '/profiles/apigee/modules/custom/devconnect/lib/Crypto.php');
 
 /**
  * Implements hook_install_tasks().
@@ -20,29 +15,16 @@ function apigee_install_tasks(&$install_state) {
   drupal_add_css(drupal_get_path('profile', 'apigee') . '/apigee.css', array('weight' => 9999));
   return array(
     'apigee_install_api_endpoint' => array(
-      'display_name' => t('Configure the Apigee Endpoint'),
+      'display_name' => t('Configure the Edge Endpoint'),
       'type' => 'form',
     ),
-    'apigee_generate_make_smartdocs_model' => array(
-      'display_name' => t('Enable SmartDocs sample content'),
-      'type' => 'form',
-    ),
-    'apigee_generate_import_smartdocs_model_content' => array(
+    'apigee_smartdocs_import_model_content' => array(
       'display_name' => t('Import sample SmartDocs content'),
-      'type' => 'normal',
-    ),
-    'apigee_generate_render_smartdocs_model_template' => array(
-      'display_name' => t('Import sample SmartDocs content'),
-      'display' => 0,
-      'type' => 'normal',
-    ),
-    'apigee_generate_render_smartdocs_model_content' => array(
-      'display_name' => t('Render sample SmartDocs content'),
       'type' => 'batch',
     ),
-    'apigee_install_smtp_credentials' => array(
-      'display_name' => t('Define your organization\'s SMTP credentials'),
-      'type' => 'form',
+    'apigee_smartdocs_render_model_content' => array(
+      'display_name' => t('Render sample SmartDocs content'),
+      'type' => 'batch',
     ),
     'apigee_install_create_admin_user' => array(
       'display_name' => t('Create an admin user'),
@@ -64,7 +46,7 @@ function apigee_install_tasks_alter(&$tasks, &$install_state) {
   $tasks['install_settings_form']['function'] = 'apigee_install_settings_form';
   $tasks['install_configure_form'] = array(
     'function' => 'apigee_install_configure_batch',
-    'display_name' => t('Configure Dev Portal settings'),
+    'display_name' => t('Create default content'),
     'run' => $install_state['batch_configure_complete'] ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_NOT_COMPLETED,
     'type' => 'batch'
   );

@@ -9,22 +9,33 @@ use Apigee\Exceptions\ResponseException;
  * The class can contain multiple maps, where each map has a name and can
  * have multiple key-value pairs stored in it.
  */
-class KeyValueMap extends Base implements KeyValueMapInterface
+class KeyValueMap extends Base
 {
 
     /**
      * Initializes default values of all member variables.
      *
      * @param \Apigee\Util\OrgConfig $config
+     * @param string $environment
      */
-    public function __construct(\Apigee\Util\OrgConfig $config)
+    public function __construct(\Apigee\Util\OrgConfig $config, $environment = '*')
     {
-        $base_url = '/o/' . rawurlencode($config->orgName) . '/keyvaluemaps';
+        if ($environment == '*') {
+            $base_url = '/o/' . rawurlencode($config->orgName) . '/keyvaluemaps';
+        }
+        else {
+            $base_url = '/o/' . rawurlencode($config->orgName) . '/e/' . rawurlencode($environment) . '/keyvaluemaps';
+        }
         $this->init($config, $base_url);
     }
 
     /**
-     * {@inheritDoc}
+     * Fetches a value from a named map/key. If no such map or key is found,
+     * returns null.
+     *
+     * @param string $map_name
+     * @param string $key_name
+     * @return null|string
      */
     public function getEntryValue($map_name, $key_name)
     {
@@ -40,7 +51,13 @@ class KeyValueMap extends Base implements KeyValueMapInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Fetches all entries for a named map and returns them as an associative
+     * array.
+     *
+     * @throws \Apigee\Exceptions\ResponseException
+     *
+     * @param string $map_name
+     * @return array
      */
     public function getAllEntries($map_name)
     {
@@ -55,7 +72,16 @@ class KeyValueMap extends Base implements KeyValueMapInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Sets a value for a named map/key.
+     *
+     * This method performs both inserts and updates; that is, if the key does
+     * not yet exist, it will create it.
+     *
+     * @throws \Apigee\Exceptions\ResponseException
+     *
+     * @param string $map_name
+     * @param string $key_name
+     * @param $value
      */
     public function setEntryValue($map_name, $key_name, $value)
     {
@@ -74,7 +100,12 @@ class KeyValueMap extends Base implements KeyValueMapInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Deletes a key and value from a map.
+     *
+     * @throws \Apigee\Exceptions\ResponseException
+     *
+     * @param string $map_name
+     * @param string $key_name
      */
     public function deleteEntry($map_name, $key_name)
     {
@@ -84,7 +115,12 @@ class KeyValueMap extends Base implements KeyValueMapInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Creates a map.
+     *
+     * @throws \Apigee\Exceptions\ResponseException
+     *
+     * @param string $map_name
+     * @param array|null $entries An optional array of key/value pairs for the map.
      */
     public function create($map_name, $entries = null)
     {
@@ -102,7 +138,11 @@ class KeyValueMap extends Base implements KeyValueMapInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Deletes a map.
+     *
+     * @throws \Apigee\Exceptions\ResponseException
+     *
+     * @param string $map_name
      */
     public function delete($map_name)
     {

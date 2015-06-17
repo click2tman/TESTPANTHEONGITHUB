@@ -179,6 +179,18 @@ class DeveloperAppCache implements \DrupalCacheInterface {
     $cid = $entity->orgName . ':' . $entity->appId;
     $this->clear($cid);
 
+    // Avoid rare duplicate-key errors
+    $cached_app_id = db_select('dc_dev_app', 'd')
+      ->fields('d', array('app_id'))
+      ->condition('uid', $entity->uid)
+      ->condition('org_name', $entity->orgName)
+      ->condition('name', $entity->name)
+      ->execute()
+      ->fetchCol();
+    if ($cached_app_id) {
+      $this->clear($entity->orgName . ':' . $cached_app_id);
+    }
+
     $fields = array(
       'app_id' => $entity->appId,
       'uid' => intval($entity->uid),
@@ -197,6 +209,14 @@ class DeveloperAppCache implements \DrupalCacheInterface {
       'app_family' => (string) $entity->appFamily,
       'org_name' => (string) $entity->orgName,
     );
+    if (strlen($fields['access_type']) > 5) {
+      if ($fields['access_type'] == 'readonly') {
+        $fields['access_type'] = 'read';
+      }
+      else {
+        $fields['access_type'] = substr($fields['access_type'], 0, 5);
+      }
+    }
 
     db_insert('dc_dev_app')->fields($fields)->execute();
     foreach ($entity->attributes as $name => $value) {
@@ -209,7 +229,14 @@ class DeveloperAppCache implements \DrupalCacheInterface {
         ))
         ->execute();
     }
+    $products = array();
     foreach ($entity->credentialApiProducts as $product) {
+      // Work around rare Edge bug in which an app may have the same apiproduct
+      // listed twice for the same credential.
+      if (in_array($product['apiproduct'], $products)) {
+        continue;
+      }
+      $products[] = $product['apiproduct'];
       switch ($product['status']) {
         case 'revoked':
           $cred_apiproduct_status = -1;
@@ -275,8 +302,6 @@ class DeveloperAppCache implements \DrupalCacheInterface {
   }
 
   public function clear($cid = NULL, $wildcard = FALSE) {
-    // DEVSOL-670: Cron runs not kicking off Rules when App changes states
-//    static $tables = array('dc_dev_app', 'dc_dev_app_attributes', 'dc_dev_app_api_products', 'dc_dev_app_previous_status');
     static $tables = array('dc_dev_app', 'dc_dev_app_attributes', 'dc_dev_app_api_products');
 
     if (empty($cid) || ($wildcard && $cid == '*')) {

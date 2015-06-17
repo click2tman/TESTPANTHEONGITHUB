@@ -278,6 +278,21 @@
         overflow: scroll;
       }
     }
+    img.figure {
+      width: 100%;
+    }
+    div.columns {
+      display: table;
+      table-layout: fixed;
+      width: 100%;
+    }
+      div.columns ul {
+        margin: 10px 0;
+      }
+    div.col-50 {
+      display: table-cell;
+      width: 50%;
+    }
   </style>
 </head>
 <body>
@@ -285,20 +300,24 @@
   <div id="sidebar" class="interface">
 
     <a class="toc_title" href="#">
-      Backbone.js <span class="version">(1.1.2)</span>
+      Backbone.js <span class="version">(1.2.1)</span>
     </a>
     <ul class="toc_section">
       <li>&raquo; <a href="http://github.com/jashkenas/backbone">GitHub Repository</a></li>
       <li>&raquo; <a href="docs/backbone.html">Annotated Source</a></li>
     </ul>
 
-    <a class="toc_title" href="#introduction">
-      Introduction
+    <a class="toc_title" href="#Getting-started">
+      Getting Started
     </a>
-
-    <a class="toc_title" href="#upgrading">
-      Upgrading
-    </a>
+    <ul class="toc_section">
+      <li>- <a href="#Getting-Started">Introduction</a></li>
+      <li>– <a href="#Model-View-separation">Models and Views</a></li>
+      <li>– <a href="#Model-Collections">Collections</a></li>
+      <li>– <a href="#API-integration">API Integration</a></li>
+      <li>– <a href="#View-rendering">Rendering</a></li>
+      <li>– <a href="#Routing">Routing</a></li>
+    </ul>
 
     <a class="toc_title" href="#Events">
       Events
@@ -337,7 +356,7 @@
       <li>– <a href="#Model-fetch">fetch</a></li>
       <li>– <a href="#Model-save">save</a></li>
       <li>– <a href="#Model-destroy">destroy</a></li>
-      <li>– <a href="#Model-Underscore-Methods"><b>Underscore Methods (6)</b></a></li>
+      <li>– <a href="#Model-Underscore-Methods"><b>Underscore Methods (9)</b></a></li>
       <li>– <a href="#Model-validate">validate</a></li>
       <li>– <a href="#Model-validationError">validationError</a></li>
       <li>– <a href="#Model-isValid">isValid</a></li>
@@ -358,11 +377,12 @@
     <ul class="toc_section">
       <li>– <a href="#Collection-extend">extend</a></li>
       <li>– <a href="#Collection-model">model</a></li>
+      <li>– <a href="#Collection-modelId">modelId</a></li>
       <li>– <a href="#Collection-constructor">constructor / initialize</a></li>
       <li>– <a href="#Collection-models">models</a></li>
       <li>– <a href="#Collection-toJSON">toJSON</a></li>
       <li>– <a href="#Collection-sync">sync</a></li>
-      <li>– <a href="#Collection-Underscore-Methods"><b>Underscore Methods (32)</b></a></li>
+      <li>– <a href="#Collection-Underscore-Methods"><b>Underscore Methods (46)</b></a></li>
       <li>– <a href="#Collection-add">add</a></li>
       <li>– <a href="#Collection-remove">remove</a></li>
       <li>– <a href="#Collection-reset">reset</a></li>
@@ -558,13 +578,13 @@
 
     <table>
       <tr>
-        <td><a class="punch" href="backbone.js">Development Version (1.1.2)</a></td>
-        <td class="text"><i>60kb, Full source, tons of comments</i></td>
+        <td><a class="punch" href="backbone.js">Development Version (1.2.1)</a></td>
+        <td class="text"><i>69kb, Full source, tons of comments</i></td>
       </tr>
       <tr>
-        <td><a class="punch" href="backbone-min.js">Production Version (1.1.2)</a></td>
+        <td><a class="punch" href="backbone-min.js">Production Version (1.2.1)</a></td>
         <td class="text" style="line-height: 16px;">
-          <i>6.5kb, Packed and gzipped</i><br />
+          <i>7.3kb, Packed and gzipped</i><br />
           <small>(<a href="backbone-min.map">Source Map</a>)</small>
         </td>
       </tr>
@@ -581,10 +601,9 @@
 
     <p>
       Backbone's only hard dependency is
-      <a href="http://underscorejs.org/">Underscore.js</a> <small>( >= 1.5.0)</small>.
-      For RESTful persistence, history support via <a href="#Router">Backbone.Router</a>
-      and DOM manipulation with <a href="#View">Backbone.View</a>, include
-      <b><a href="http://jquery.com">jQuery</a></b> ( >= 1.11.0), and
+      <a href="http://underscorejs.org/">Underscore.js</a> <small>( >= 1.7.0)</small>.
+      For RESTful persistence and DOM manipulation with <a href="#View">Backbone.View</a>,
+      include <b><a href="http://jquery.com">jQuery</a></b> ( >= 1.11.0), and
       <b><a href="https://github.com/douglascrockford/JSON-js">json2.js</a></b> for older
       Internet Explorer support.
       <i>(Mimics of the Underscore and jQuery APIs, such as
@@ -592,8 +611,7 @@
       <a href="http://zeptojs.com">Zepto</a>, will
       also tend to work, with varying degrees of compatibility.)</i>
     </p>
-
-    <h2 id="introduction">Introduction</h2>
+    <h2 id="Getting-started">Getting Started</h2>
 
     <p>
       When working on a web application that involves a lot of JavaScript, one
@@ -635,58 +653,181 @@
     </p>
 
     <p>
-      Many of the examples that follow are runnable. Click the <i>play</i> button
-      to execute them.
+      Many of the code examples in this documentation are runnable, because
+      Backbone is included on this page.
+      Click the <i>play</i> button to execute them.
     </p>
 
-    <h2 id="upgrading">Upgrading to 1.1</h2>
+    <h2 id="Model-View-separation">Models and Views</h2>
+
+    <img class="figure" src="docs/images/intro-model-view.svg" alt="Model-View Separation.">
 
     <p>
-      Backbone <b>1.1</b> should be a fairly painless upgrade from the <b>0.9.X</b>
-      series. If you're upgrading from an older version, be sure to check out the
-      <a href="#changelog">change log</a>. In brief, a few of the larger breaking
-      changes are:
+      The single most important thing that Backbone can help you with is keeping
+      your business logic separate from your user interface. When the two are
+      entangled, change is hard; when logic doesn't depend on UI, your
+      interface becomes easier to work with.
     </p>
 
-    <ul>
-      <li>
-        If you want to smartly update the contents of a Collection,
-        adding new models, removing missing ones, and merging those already present,
-        you now call <a href="#Collection-set">set</a> (previously named "update"),
-        a similar operation to calling <tt>set</tt> on a Model. This is now the
-        default when you call <a href="#Collection-fetch">fetch</a> on a collection.
-        To get the old behavior, pass <tt>{reset: true}</tt>.
-      </li>
-      <li>
-        If you have characters in your URL segments that require URL encoding,
-        Backbone will now decode them for you (normalizing the behavior
-        cross-browser) before your route handlers receive them as arguments.
-      </li>
-      <li>
-        In <b>0.9.x</b>, Backbone events gained two new methods:
-        <a href="#Events-listenTo">listenTo</a> and
-        <a href="#Events-stopListening">stopListening</a>, which make it easier
-        to create Views that have all of their observers unbound when you
-        want to <a href="#View-remove">remove</a> the view.
-      </li>
-      <li>
-        Model validation is now only enforced by default in
-        <a href="#Model-save">save</a> &mdash; not in
-        <a href="#Model-set">set</a> unless the <tt>{validate:true}</tt>
-        option is passed. Model validation now fires an <tt>"invalid"</tt> event instead of
-        <tt>"error"</tt>.
-      </li>
-      <li>
-        In 1.1, Backbone Views no longer have the <tt>options</tt> argument
-        attached as <tt>this.options</tt> automatically. Feel free to continue
-        attaching it if you like.
-      </li>
-      <li>
-        In 1.1, The <b>Collection</b> methods <tt>add</tt>, <tt>remove</tt>,
-        <tt>set</tt>, <tt>push</tt>, and <tt>shift</tt> now return the model
-        (or models) added or removed from the collection.
-      </li>
-    </ul>
+    <div class="columns">
+      <div class="col-50">
+        <b>Model</b>
+        <ul>
+          <li>Orchestrates data and business logic.</li>
+          <li>Loads and saves from the server.</li>
+          <li>Emits events when data changes.</li>
+        </ul>
+      </div>
+      <div class="col-50">
+        <b>View</b>
+        <ul>
+          <li>Listens for changes and renders UI.</li>
+          <li>Handles user input and interactivity.</li>
+          <li>Sends captured input to the model.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>
+      A <b>Model</b> manages an internal table of data attributes, and
+      triggers <tt>"change"</tt> events when any of its data is modified.
+      Models handle syncing data with a persistence layer — usually a REST API
+      with a backing database. Design your models as the atomic reusable objects
+      containing all of the helpful functions for manipulating their particular
+      bit of data. Models should be able to be passed around throughout your app,
+      and used anywhere that bit of data is needed.
+    </p>
+
+    <p>
+      A <b>View</b> is an atomic chunk of user interface. It often renders the
+      data from a specific model, or number of models &mdash; but views can
+      also be data-less chunks of UI that stand alone.
+      Models should be generally unaware of views. Instead, views listen to
+      the model <tt>"change"</tt> events, and react or re-render themselves
+      appropriately.
+    </p>
+
+    <h2 id="Model-Collections">Collections</h2>
+
+    <img class="figure" src="docs/images/intro-collections.svg" alt="Model Collections.">
+
+    <p>
+      A <b>Collection</b> helps you deal with a group of related models, handling
+      the loading and saving of new models to the server and providing helper
+      functions for performing aggregations or computations against a list of models.
+      Aside from their own events, collections also proxy through all of the
+      events that occur to models within them, allowing you to listen in one place
+      for any change that might happen to any model in the collection.
+    </p>
+
+    <h2 id="API-integration">API Integration</h2>
+
+    <p>
+      Backbone is pre-configured to sync with a RESTful API. Simply create a
+      new Collection with the <tt>url</tt> of your resource endpoint:
+    </p>
+
+<pre>
+var Books = Backbone.Collection.extend({
+  url: '/books'
+});
+</pre>
+
+    <p>
+      The <b>Collection</b> and <b>Model</b> components together form a direct
+      mapping of REST resources using the following methods:
+    </p>
+
+<pre>
+GET  /books/ .... collection.fetch();
+POST /books/ .... collection.create();
+GET  /books/1 ... model.fetch();
+PUT  /books/1 ... model.save();
+DEL  /books/1 ... model.destroy();
+</pre>
+
+    <p>
+      When fetching raw JSON data from an API, a <b>Collection</b> will
+      automatically populate itself with data formatted as an array, while
+      a <b>Model</b> will automatically populate itself with data formatted
+      as an object:
+    </p>
+
+<pre>
+[{"id": 1}] ..... populates a Collection with one model.
+{"id": 1} ....... populates a Model with one attribute.
+</pre>
+
+    <p>
+      However, it's fairly common to encounter APIs that return data in a
+      different format than what Backbone expects. For example, consider
+      fetching a <b>Collection</b> from an API that returns the real data
+      array wrapped in metadata:
+    </p>
+
+<pre>
+{
+  "page": 1,
+  "limit": 10,
+  "total": 2,
+  "books": [
+    {"id": 1, "title": "Pride and Prejudice"},
+    {"id": 4, "title": "The Great Gatsby"}
+  ]
+}
+</pre>
+
+    <p>
+      In the above example data, a <b>Collection</b> should populate using the
+      <tt>"books"</tt> array rather than the root object structure. This
+      difference is easily reconciled using a <tt>parse</tt> method that
+      returns (or transforms) the desired portion of API data:
+    </p>
+
+<pre>
+var Books = Backbone.Collection.extend({
+  url: '/books',
+  parse: function(data) {
+    return data.books;
+  }
+});
+</pre>
+
+    <h2 id="View-rendering">View Rendering</h2>
+
+    <img class="figure" src="docs/images/intro-views.svg" alt="View rendering.">
+
+    <p>
+      Each <b>View</b> manages the rendering and user interaction within its own
+      DOM element. If you're strict about not allowing views to reach outside
+      of themselves, it helps keep your interface flexible &mdash; allowing
+      views to be rendered in isolation in any place where they might be needed.
+    </p>
+
+    <p>
+      Backbone remains unopinionated about the process used to render <b>View</b>
+      objects and their subviews into UI: you define how your models get translated
+      into HTML (or SVG, or Canvas, or something even more exotic).
+      It could be as prosaic as a simple
+      <a href="http://underscorejs.org/#template">Underscore template</a>, or as fancy as the
+      <a href="http://facebook.github.io/react/docs/tutorial.html">React virtual DOM</a>.
+      Some basic approaches to rendering views can be found
+      in the <a href="https://github.com/jashkenas/backbone/wiki/Backbone%2C-The-Primer">Backbone primer</a>.
+    </p>
+
+    <h2 id="Routing">Routing with URLs</h2>
+
+    <img class="figure" src="docs/images/intro-routing.svg" alt="Routing">
+
+    <p>
+      In rich web applications, we still want to provide linkable,
+      bookmarkable, and shareable URLs to meaningful locations within an app.
+      Use the <b>Router</b> to update the browser URL whenever the user
+      reaches a new "place" in your app that they might want to bookmark or share.
+      Conversely, the <b>Router</b> detects changes to the URL &mdash; say,
+      pressing the "Back" button &mdash; and can tell your application exactly where you
+      are now.
+    </p>
 
     <h2 id="Events">Backbone.Events</h2>
 
@@ -805,6 +946,8 @@ object.off();
       <br />
       Just like <a href="#Events-on">on</a>, but causes the bound callback to fire
       only once before being removed. Handy for saying "the next time that X happens, do this".
+      When multiple events are passed in using the space separated syntax, the event will fire once
+      for every event you passed in, not once for a combination of all events
     </p>
 
     <p id="Events-listenTo">
@@ -855,21 +998,22 @@ view.stopListening(model);
     </p>
 
     <ul class="small">
-      <li><b>"add"</b> (model, collection, options) &mdash; when a model is added to a collection. </li>
-      <li><b>"remove"</b> (model, collection, options) &mdash; when a model is removed from a collection. </li>
-      <li><b>"reset"</b> (collection, options) &mdash; when the collection's entire contents have been replaced. </li>
-      <li><b>"sort"</b> (collection, options) &mdash; when the collection has been re-sorted. </li>
-      <li><b>"change"</b> (model, options) &mdash; when a model's attributes have changed. </li>
-      <li><b>"change:[attribute]"</b> (model, value, options) &mdash; when a specific attribute has been updated. </li>
-      <li><b>"destroy"</b> (model, collection, options) &mdash; when a model is <a href="#Model-destroy">destroyed</a>. </li>
-      <li><b>"request"</b> (model_or_collection, xhr, options) &mdash; when a model or collection has started a request to the server. </li>
+      <li><b>"add"</b> (model, collection, options) &mdash; when a model is added to a collection.</li>
+      <li><b>"remove"</b> (model, collection, options) &mdash; when a model is removed from a collection.</li>
+      <li><b>"update"</b> (collection, options) &mdash; single event triggered after any number of models have been added or removed from a collection.</li>
+      <li><b>"reset"</b> (collection, options) &mdash; when the collection's entire contents have been replaced.</li>
+      <li><b>"sort"</b> (collection, options) &mdash; when the collection has been re-sorted.</li>
+      <li><b>"change"</b> (model, options) &mdash; when a model's attributes have changed.</li>
+      <li><b>"change:[attribute]"</b> (model, value, options) &mdash; when a specific attribute has been updated.</li>
+      <li><b>"destroy"</b> (model, collection, options) &mdash; when a model is <a href="#Model-destroy">destroyed</a>.</li>
+      <li><b>"request"</b> (model_or_collection, xhr, options) &mdash; when a model or collection has started a request to the server.</li>
       <li><b>"sync"</b> (model_or_collection, resp, options) &mdash; when a model or collection has been successfully synced with the server.</li>
-      <li><b>"error"</b> (model_or_collection, resp, options) &mdash; when model's or collection's request to remote server has failed. </li>
-      <li><b>"invalid"</b> (model, error, options) &mdash; when a model's <a href="#Model-validate">validation</a> fails on the client. </li>
+      <li><b>"error"</b> (model_or_collection, resp, options) &mdash; when a model's or collection's request to the server has failed.</li>
+      <li><b>"invalid"</b> (model, error, options) &mdash; when a model's <a href="#Model-validate">validation</a> fails on the client.</li>
       <li><b>"route:[name]"</b> (params) &mdash; Fired by the router when a specific route is matched.</li>
       <li><b>"route"</b> (route, params) &mdash; Fired by the router when <i>any</i> route has been matched.</li>
       <li><b>"route"</b> (router, route, params) &mdash; Fired by history when <i>any</i> route has been matched.</li>
-      <li><b>"all"</b> &mdash; this special event fires for <i>any</i> triggered event, passing the event name as the first argument. </li>
+      <li><b>"all"</b> &mdash; this special event fires for <i>any</i> triggered event, passing the event name as the first argument.</li>
     </ul>
 
     <p>
@@ -1154,7 +1298,7 @@ alert("Cake id: " + cake.id);
       <b class="header">changed</b><code>model.changed</code>
       <br />
       The <b>changed</b> property is the internal hash containing all the attributes
-      that have changed since the last <a href="#Model-set">set</a>.
+      that have changed since its last <a href="#Model-set">set</a>.
       Please do not update <b>changed</b> directly since its state is internally maintained
       by <a href="#Model-set">set</a>.  A copy of <b>changed</b> can be acquired from
       <a href="#Model-changedAttributes">changedAttributes</a>.
@@ -1219,13 +1363,13 @@ alert(JSON.stringify(artist));
     <p id="Model-fetch">
       <b class="header">fetch</b><code>model.fetch([options])</code>
       <br />
-      Resets the model's state from the server by delegating to
-      <a href="#Sync">Backbone.sync</a>. Returns a
+      Merges the model's state with attributes fetched from the server by
+      delegating to <a href="#Sync">Backbone.sync</a>. Returns a
       <a href="http://api.jquery.com/jQuery.ajax/#jqXHR">jqXHR</a>.
       Useful if the model has never
       been populated with data, or if you'd like to ensure that you have the
-      latest server state. A <tt>"change"</tt> event will be triggered if the
-      server's state differs from the current attributes. Accepts
+      latest server state. Triggers a <tt>"change"</tt> event if the
+      server's state differs from the current attributes. <tt>fetch</tt> accepts
       <tt>success</tt> and <tt>error</tt> callbacks in the options hash, which
       are both passed <tt>(model, response, options)</tt> as arguments.
     </p>
@@ -1327,9 +1471,9 @@ book.destroy({success: function(model, response) {
 </pre>
 
     <p id="Model-Underscore-Methods">
-      <b class="header">Underscore Methods (6)</b>
+      <b class="header">Underscore Methods (9)</b>
       <br />
-      Backbone proxies to <b>Underscore.js</b> to provide 6 object functions
+      Backbone proxies to <b>Underscore.js</b> to provide 9 object functions
       on <b>Backbone.Model</b>. They aren't all documented here, but
       you can take a look at the Underscore documentation for the full details&hellip;
     </p>
@@ -1341,6 +1485,9 @@ book.destroy({success: function(model, response) {
       <li><a href="http://underscorejs.org/#invert">invert</a></li>
       <li><a href="http://underscorejs.org/#pick">pick</a></li>
       <li><a href="http://underscorejs.org/#omit">omit</a></li>
+      <li><a href="http://underscorejs.org/#matches">matches</a></li>
+      <li><a href="http://underscorejs.org/#chain">chain</a></li>
+      <li><a href="http://underscorejs.org/#isEmpty">isEmpty</a></li>
     </ul>
 
 <pre>
@@ -1352,14 +1499,16 @@ chapters.keys().join(', ');
     <p id="Model-validate">
       <b class="header">validate</b><code>model.validate(attributes, options)</code>
       <br />
-      This method is left undefined, and you're encouraged to override it with
-      your custom validation logic, if you have any that can be performed
-      in JavaScript. By default <b>validate</b> is called before
-      <tt>save</tt>, but can also be called before <tt>set</tt> if
-      <tt>{validate:true}</tt> is passed. The <b>validate</b> method is passed
-      the model attributes, as well as the options from <tt>set</tt> or <tt>save</tt>.
+      This method is left undefined and you're encouraged to override it with
+      any custom validation logic you have that can be performed in JavaScript.
+      By default <tt>save</tt> checks <b>validate</b> before
+      setting any attributes but you may also tell <tt>set</tt> to validate
+      the new attributes by passing <tt>{validate: true}</tt> as an option.
+      <br />
+      The <b>validate</b> method receives the model attributes as well as any
+      options passed to <tt>set</tt> or <tt>save</tt>.
       If the attributes are valid, don't return anything from <b>validate</b>;
-      if they are invalid, return an error of your choosing. It
+      if they are invalid return an error of your choosing. It
       can be as simple as a string error message to be displayed, or a complete
       error object that describes the error programmatically. If <b>validate</b>
       returns an error, <tt>save</tt> will not continue, and the
@@ -1508,7 +1657,7 @@ ActiveRecord::Base.include_root_in_json = false
     <p id="Model-hasChanged">
       <b class="header">hasChanged</b><code>model.hasChanged([attribute])</code>
       <br />
-      Has the model changed since the last <a href="#Model-set">set</a>? If an <b>attribute</b>
+      Has the model changed since its last <a href="#Model-set">set</a>? If an <b>attribute</b>
       is passed, returns <tt>true</tt> if that specific attribute has changed.
     </p>
 
@@ -1624,6 +1773,36 @@ var Library = Backbone.Collection.extend({
 });
 </pre>
 
+    <p id="Collection-modelId">
+      <b class="header">modelId</b><code>collection.modelId</code>
+      <br />
+      Override this method to specify the attribute the collection will use to
+      refer to its models in <a href="#Collection-get">collection.get</a>.
+      <br />
+      By default returns the <tt>idAttribute</tt> of the collection's model
+      class or failing that, <tt>'id'</tt>. If your collection uses polymorphic
+      models and those models have an <tt>idAttribute</tt> other than <tt>id</tt>
+      you must override this method with your own custom logic.
+    </p>
+
+<pre>
+var Library = Backbone.Collection.extend({
+
+  model: function(attrs, options) {
+    if (condition) {
+      return new PublicDocument(attrs, options);
+    } else {
+      return new PrivateDocument(attrs, options);
+    }
+  },
+
+  modelId: function(attrs) {
+    return attrs.private ? 'private_id' : 'public_id';
+  }
+
+});
+</pre>
+
     <p id="Collection-constructor">
       <b class="header">constructor / initialize</b><code>new Backbone.Collection([models], [options])</code>
       <br />
@@ -1682,9 +1861,9 @@ alert(JSON.stringify(collection));
     </p>
 
     <p id="Collection-Underscore-Methods">
-      <b class="header">Underscore Methods (32)</b>
+      <b class="header">Underscore Methods (46)</b>
       <br />
-      Backbone proxies to <b>Underscore.js</b> to provide 32 iteration functions
+      Backbone proxies to <b>Underscore.js</b> to provide 46 iteration functions
       on <b>Backbone.Collection</b>. They aren't all documented here, but
       you can take a look at the Underscore documentation for the full details&hellip;
     </p>
@@ -1746,7 +1925,7 @@ var alphabetical = books.sortBy(function(book) {
       <b class="header">add</b><code>collection.add(models, [options])</code>
       <br />
       Add a model (or an array of models) to the collection, firing an <tt>"add"</tt>
-      event. If a <a href="#Collection-model">model</a> property is defined, you may also pass
+      event for each model, and an <tt>"update"</tt> event afterwards. If a <a href="#Collection-model">model</a> property is defined, you may also pass
       raw attributes objects, and have them be vivified as instances of the model.
       Returns the added (or preexisting, if duplicate) models.
       Pass <tt>{at: index}</tt> to splice the model into the collection at the
@@ -1777,8 +1956,12 @@ ships.add([
     <p id="Collection-remove">
       <b class="header">remove</b><code>collection.remove(models, [options])</code>
       <br />
-      Remove a model (or an array of models) from the collection, and returns them.
-      Fires a <tt>"remove"</tt> event, which you can use <tt>silent</tt> to suppress.
+      Remove a model (or an array of models) from the collection, and return
+      them. Each model can be a Model instance, an <tt>id</tt> string or a JS
+      object, any value acceptable as the <tt>id</tt> argument of
+      <a href="#Collection-get"><tt>collection.get</tt></a>.
+      Fires a <tt>"remove"</tt> event for each model, and a single
+      <tt>"update"</tt> event afterwards.
       The model's index before removal is available to listeners as
       <tt>options.index</tt>.
     </p>
@@ -2156,7 +2339,7 @@ var othello = nypl.create({
 
     <p>
       During page load, after your application has finished creating all of its routers,
-      be sure to call <tt>Backbone.history.start()</tt>, or
+      be sure to call <tt>Backbone.history.start()</tt> or
       <tt>Backbone.history.start({pushState: true})</tt> to route the initial URL.
     </p>
 
@@ -2313,10 +2496,11 @@ app.navigate("help/troubleshooting", {trigger: true, replace: true});
 </pre>
 
     <p id="Router-execute">
-      <b class="header">execute</b><code>router.execute(callback, args)</code>
+      <b class="header">execute</b><code>router.execute(callback, args, name)</code>
       <br />
       This method is called internally within the router, whenever a route
       matches and its corresponding <b>callback</b> is about to be executed.
+      Return <b>false</b> from execute to cancel the current transition.
       Override it to perform custom parsing or wrapping of your routes, for
       example, to parse query strings before handing them to your route
       callback, like so:
@@ -2324,7 +2508,11 @@ app.navigate("help/troubleshooting", {trigger: true, replace: true});
 
 <pre>
 var Router = Backbone.Router.extend({
-  execute: function(callback, args) {
+  execute: function(callback, args, name) {
+    if (!loggedIn) {
+      goToLogin();
+      return false;
+    }
     args.push(parseQueryString(args.pop()));
     if (callback) callback.apply(this, args);
   }
@@ -2443,7 +2631,7 @@ $(function(){
     </p>
 
     <p>
-      The <b>sync</b> function may be overriden globally as <tt>Backbone.sync</tt>,
+      The <b>sync</b> function may be overridden globally as <tt>Backbone.sync</tt>,
       or at a finer-grained level, by adding a <tt>sync</tt> function to a Backbone
       collection or to an individual model.
     </p>
@@ -2598,9 +2786,15 @@ new DocumentRow({
       whether they've already been inserted into the page or not. In this
       fashion, views can be rendered at any time, and inserted into the DOM all
       at once, in order to get high-performance UI rendering with as few
-      reflows and repaints as possible. <tt>this.el</tt> is created from the
-      view's <tt>tagName</tt>, <tt>className</tt>, <tt>id</tt> and <tt>attributes</tt> properties,
-      if specified. If not, <b>el</b> is an empty <tt>div</tt>.
+      reflows and repaints as possible.
+    </p>
+
+    <p>
+      <tt>this.el</tt> can be resolved from a DOM selector string or an Element;
+      otherwise it will be created from the view's <tt>tagName</tt>, <tt>className</tt>,
+      <tt>id</tt> and <a href="#View-attributes"><tt>attributes</tt></a> properties.
+      If none are set, <tt>this.el</tt> is an empty <tt>div</tt>, which is often just
+      fine. An <b>el</b> reference may also be passed in to the view's constructor.
     </p>
 
 <pre class="runnable">
@@ -2830,12 +3024,11 @@ var model = localBackbone.Model.extend(...);
       <br />
       If you have multiple copies of <tt>jQuery</tt> on the page, or simply want
       to tell Backbone to use a particular object as its DOM / Ajax library,
-      this is the property for you. If you're loading Backbone with CommonJS
-      (e.g. node, component, or browserify) you must set this property manually.
+      this is the property for you.
     </p>
 
 <pre>
-var Backbone.$ = require('jquery');
+Backbone.$ = require('jquery');
 </pre>
 
     <h2 id="faq">F.A.Q.</h2>
@@ -3070,7 +3263,7 @@ inbox.messages.fetch({reset: true});
       extend and enhance it in the ways you see fit &mdash; the entire source
       code is <a href="docs/backbone.html">annotated</a> to make this easier
       for you. You'll find that there's very little there apart from core
-      functions, and most of those can be overriden or augmented should you find
+      functions, and most of those can be overridden or augmented should you find
       the need. If you catch yourself adding methods to <tt>Backbone.Model.prototype</tt>,
       or creating your own base subclass, don't worry &mdash; that's how things are
       supposed to work.
@@ -4043,6 +4236,121 @@ ActiveRecord::Base.include_root_in_json = false
     </div>
 
     <h2 id="changelog">Change Log</h2>
+
+    <b class="header">1.2.1</b> &mdash; <small><i>Jun. 4, 2015</i></small>
+    &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.2.0...1.2.1">Diff</a>
+    &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.2.1/index.html">Docs</a>
+    <br />
+    <ul style="margin-top: 5px;">
+      <li>
+        <tt>Collection#add</tt> now avoids trying to parse a model instance when passed <tt>parse: true</tt>.
+      </li>
+      <li>
+        Bug fix in <tt>Collection#remove</tt>. The removed models are now actually returned.
+      </li>
+      <li>
+        <tt>Model#fetch</tt> no longer parses the response when passing <tt>patch: false</tt>.
+      </li>
+      <li>
+        Bug fix for iframe-based History when used with JSDOM.
+      </li>
+      <li>
+        Bug fix where <tt>Collection#invoke</tt> was not taking additional arguments.
+      </li>
+      <li>
+        When using <tt>on</tt> with an event map, you can now pass the context as the
+        second argument. This was previously an undocumented behavior from 1.1.2 removed
+        in 1.2.0.
+      </li>
+    </ul>
+  
+    <b class="header">1.2.0</b> &mdash; <small><i>May 13, 2015</i></small>
+    &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.1.2...1.2.0">Diff</a>
+    &mdash; <a href="https://cdn.rawgit.com/jashkenas/backbone/1.2.0/index.html">Docs</a>
+    <br />
+    <ul style="margin-top: 5px;">
+      <li>
+        Added new hooks to Views to allow them to work without jQuery. See the
+        <a href="https://github.com/jashkenas/backbone/wiki/Using-Backbone-without-jQuery">wiki page</a>
+        for more info.
+      </li>
+      <li>
+        As a neat side effect, Backbone.History no longer uses jQuery's
+        event methods for <tt>pushState</tt> and <tt>hashChange</tt> listeners.
+        We're native all the way.
+      </li>
+      <li>
+        Also on the subject of jQuery, if you're using Backbone with CommonJS (node, browserify, webpack)
+        Backbone will automatically try to load jQuery for you.
+      </li>
+      <li>
+        Views now always delegate their events in <a href="#View-setElement">setElement</a>.
+        You can no longer modify the events hash or your view's <tt>el</tt> property in
+        <tt>initialize</tt>. 
+      </li>
+      <li>
+        Added an <tt>"update"</tt> event that triggers after any amount of
+        models are added or removed from a collection. Handy to re-render lists
+        of things without debouncing.
+      </li>
+      <li>
+        <tt>Collection#at</tt> can take a negative index.
+      </li>
+      <li>
+        Added <tt>modelId</tt> to Collection for generating unique ids on
+        polymorphic collections. Handy for cases when your model ids would
+        otherwise collide.
+      </li>
+      <li>
+        Added an overridable <tt>_isModel</tt> for more advanced
+        control of what's considered a model by your Collection.
+      </li>
+      <li>
+        The <tt>success</tt> callback passed to <tt>Model#destroy</tt> is always
+        called asynchronously now.
+      </li>
+      <li>
+        <tt>Router#execute</tt> passes back the route name as its third argument.
+      </li>
+      <li>
+        Cancel the current Router transition by returning <tt>false</tt> in
+        <tt>Router#execute</tt>. Great for checking logged-in status or other
+        prerequisites.
+      </li>
+      <li>
+        Added <tt>getSearch</tt> and <tt>getPath</tt> methods to Backbone.History as
+        cross-browser and overridable ways of slicing up the URL.
+      </li>
+      <li>
+        Added <tt>delegate</tt> and <tt>undelegate</tt> as finer-grained versions
+        of <tt>delegateEvents</tt> and <tt>undelegateEvents</tt>. Useful for plugin
+        authors to use a consistent events interface in Backbone.
+      </li>
+      <li>
+        A collection will only fire a "sort" event if its order was actually
+        updated, not on every <tt>set</tt>.
+      </li>
+      <li>
+        Any passed <tt>options.attrs</tt> are now respected when saving a model with
+        <tt>patch: true</tt>.
+      </li>
+      <li>
+        <tt>Collection#clone</tt> now sets the <tt>model</tt> and <tt>comparator</tt>
+        functions of the cloned collection to the new one.
+      </li>
+      <li>
+        Adding models to your Collection when specifying an <tt>at</tt> position
+        now sends the actual position of your model in the <tt>add</tt>
+        event, not just the one you've passed in.
+      </li>
+      <li>
+        <tt>Collection#remove</tt> will now only return a list of models that
+        have actually been removed from the collection.
+      </li>
+      <li>
+        Fixed loading Backbone.js in strict ES6 module loaders.
+      </li>
+    </ul>
 
     <b class="header">1.1.2</b> &mdash; <small><i>Feb. 20, 2014</i></small>
     &mdash; <a href="https://github.com/jashkenas/backbone/compare/1.1.1...1.1.2">Diff</a>

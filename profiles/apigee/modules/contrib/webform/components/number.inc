@@ -56,6 +56,17 @@ function _webform_theme_number() {
 }
 
 /**
+ * Adjusts the view field(s) that are automatically generated for number
+ * components.
+ */
+function _webform_view_field_number($component, $fields) {
+  foreach ($fields as &$field) {
+    $field['webform_datatype'] = 'number';
+  }
+  return $fields;
+}
+
+/**
  * Implements _webform_edit_component().
  */
 function _webform_edit_number($component) {
@@ -261,7 +272,7 @@ function theme_webform_number($variables) {
 /**
  * Implements _webform_render_component().
  */
-function _webform_render_number($component, $value = NULL, $filter = TRUE) {
+function _webform_render_number($component, $value = NULL, $filter = TRUE, $submission = NULL) {
   $node = isset($component['nid']) ? node_load($component['nid']) : NULL;
 
   $element = array(
@@ -285,6 +296,10 @@ function _webform_render_number($component, $value = NULL, $filter = TRUE) {
     '#decimals' => $component['extra']['decimals'],
     '#translatable' => array('title', 'description', 'field_prefix', 'field_suffix'),
   );
+
+  if ($component['required']) {
+    $element['#attributes']['required'] = 'required';
+  }
 
   // Set the decimal count to zero for integers.
   if ($element['#integer'] && $element['#decimals'] === '') {
@@ -392,16 +407,20 @@ function theme_webform_display_number($variables) {
 /**
  * Implements _webform_analysis_component().
  */
-function _webform_analysis_number($component, $sids = array(), $single = FALSE) {
+function _webform_analysis_number($component, $sids = array(), $single = FALSE, $join = NULL) {
   $advanced_stats = $single;
 
   $query = db_select('webform_submitted_data', 'wsd', array('fetch' => PDO::FETCH_ASSOC))
     ->fields('wsd', array('data'))
-    ->condition('nid', $component['nid'])
-    ->condition('cid', $component['cid']);
+    ->condition('wsd.nid', $component['nid'])
+    ->condition('wsd.cid', $component['cid']);
 
   if (count($sids)) {
-    $query->condition('sid', $sids, 'IN');
+    $query->condition('wsd.sid', $sids, 'IN');
+  }
+
+  if ($join) {
+    $query->innerJoin($join, 'ws2_', 'wsd.sid = ws2_.sid');
   }
 
   $population = array();
@@ -458,7 +477,7 @@ function _webform_analysis_number($component, $sids = array(), $single = FALSE) 
   if ($advanced_stats && $population_count && $sum != 0) {
     // Standard deviation.
     $stddev = 0;
-    foreach($population as $value) {
+    foreach ($population as $value) {
       // Obtain the total of squared variances.
       $stddev += pow(($value - $average), 2);
     }
@@ -503,21 +522,21 @@ function _webform_analysis_number($component, $sids = array(), $single = FALSE) 
     $stddev = _webform_number_format($component, $stddev);
     $low = _webform_number_format($component, $population[0]);
     $high = _webform_number_format($component, end($population));
-    foreach($limit as $key => $value) {
+    foreach ($limit as $key => $value) {
       $limit[$key] = _webform_number_format($component, $value);
     }
 
     // Column headings (override potential theme uppercase, e.g. Seven in D7).
     $header = array(
       t('Normal Distribution'),
-      array('data' => '-4' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '-3' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '-2' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '-1' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '+1' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '+2' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '+3' . $sigma, 'style' => 'text-transform: lowercase;',),
-      array('data' => '+4' . $sigma, 'style' => 'text-transform: lowercase;',),
+      array('data' => '-4' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '-3' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '-2' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '-1' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '+1' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '+2' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '+3' . $sigma, 'style' => 'text-transform: lowercase;'),
+      array('data' => '+4' . $sigma, 'style' => 'text-transform: lowercase;'),
     );
 
     // Insert row labels.
@@ -525,7 +544,7 @@ function _webform_analysis_number($component, $sids = array(), $single = FALSE) 
     array_unshift($count, t('Count'));
     array_unshift($percent, t('% of !description', array('!description' => $description)));
 
-    $normal_distribution = theme('table', array('header' => $header, 'rows' => array($limit, $count, $percent)));
+    $normal_distribution = theme('table', array('header' => $header, 'rows' => array($limit, $count, $percent), 'sticky' => FALSE));
 
     $other[] = array(t('Range'), t('!low to !high', array('!low' => $low, '!high' => $high)));
     $other[] = array(t('Standard deviation (!sigma)', array('!sigma' => $sigma)), $stddev);
@@ -585,7 +604,7 @@ function _webform_validate_number($element, &$form_state) {
   if ($value != '') {
     // First check that the entered value matches the expected value.
     if (!webform_number_format_match($value, $element['#point'], $element['#separator'])) {
-      form_error($element, t('%name field value must format numbers as "@example".', array('%name' => $element['#title'], '@example' => webform_number_format(12345.6789, $element['#decimals'], $element['#point'], $element['#separator']))));
+      form_error($element, t('!name field value must format numbers as "@example".', array('!name' => $element['#title'], '@example' => webform_number_format(12345.6789, $element['#decimals'], $element['#point'], $element['#separator']))));
       return;
     }
 
@@ -604,19 +623,19 @@ function _webform_validate_number($element, &$form_state) {
           $max = $element['#min'];
         }
         if ($numeric_value > $max || $numeric_value < $min) {
-          form_error($element, t('%name field value of @value should be in the range @min to @max.', array('%name' => $element['#title'], '@value' => $value, '@min' => $element['#min'], '@max' => $element['#max'])));
+          form_error($element, t('!name field value of @value should be in the range @min to @max.', array('!name' => $element['#title'], '@value' => $value, '@min' => $element['#min'], '@max' => $element['#max'])));
         }
       }
       elseif ($element['#max'] != '' && $numeric_value > $element['#max']) {
-        form_error($element, t('%name field value must be less than @max.', array('%name' => $element['#title'], '@max' => $element['#max'])));
+        form_error($element, t('!name field value must be less than @max.', array('!name' => $element['#title'], '@max' => $element['#max'])));
       }
       elseif ($element['#min'] != '' && $numeric_value < $element['#min']) {
-        form_error($element, t('%name field value must be greater than @min.', array('%name' => $element['#title'], '@min' => $element['#min'])));
+        form_error($element, t('!name field value must be greater than @min.', array('!name' => $element['#title'], '@min' => $element['#min'])));
       }
 
       // Integer test.
       if ($element['#integer'] && !is_int($numeric_value * 1)) {
-        form_error($element, t('%name field value of @value must be an integer.', array('%name' => $element['#title'], '@value' => $value)));
+        form_error($element, t('!name field value of @value must be an integer.', array('!name' => $element['#title'], '@value' => $value)));
       }
 
       // Step test.
@@ -629,15 +648,15 @@ function _webform_validate_number($element, &$form_state) {
           $starting_number + ($element['#step'] * 3),
         );
         if ($starting_number) {
-          form_error($element, t('%name field value must be @start plus a multiple of @step. i.e. @samples, etc.', array('%name' => $element['#title'], '@start' => $element['#min'], '@step' => $element['#step'], '@samples' => implode(', ', $samples))));
+          form_error($element, t('!name field value must be @start plus a multiple of @step. i.e. @samples, etc.', array('!name' => $element['#title'], '@start' => $element['#min'], '@step' => $element['#step'], '@samples' => implode(', ', $samples))));
         }
         else {
-          form_error($element, t('%name field value must be a multiple of @step. i.e. @samples, etc.', array('%name' => $element['#title'], '@step' => $element['#step'], '@samples' => implode(', ', $samples))));
+          form_error($element, t('!name field value must be a multiple of @step. i.e. @samples, etc.', array('!name' => $element['#title'], '@step' => $element['#step'], '@samples' => implode(', ', $samples))));
         }
       }
     }
     else {
-      form_error($element, t('%name field value of @value must be numeric.', array('%name' => $element['#title'], '@value' => $value)));
+      form_error($element, t('!name field value of @value must be numeric.', array('!name' => $element['#title'], '@value' => $value)));
     }
   }
 }
@@ -854,10 +873,10 @@ function webform_modulo($a, $b) {
  * See @link http://www.cygnus-software.com/papers/comparingfloats/comparingfloats.htm @endlink
  * See @link http://floating-point-gui.de/errors/comparison/ @endlink
  * See @link http://en.wikipedia.org/wiki/IEEE_754-1985#Denormalized_numbers @endlink
-
- * @param $number_1 float
+ *
+ * @param float $number_1
  *   The first number.
- * @param $number_2 float
+ * @param float $number_2
  *   The second number.
  *
  * @return int|null
